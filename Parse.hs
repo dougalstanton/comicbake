@@ -1,4 +1,4 @@
-module ScriptParse where
+module Parse (rawScript, rawToScenes) where
 
 import Control.Monad (liftM, liftM2, liftM3)
 import Text.ParserCombinators.Parsec hiding (space, spaces)
@@ -20,6 +20,10 @@ rawScript str path = Script { scriptTitle = title
           (title:credits) = case lines (head headerblock) of
                                 [] -> ["",""]
                                 ls -> mapMaybe (stripPrefix "-- ") ls
+
+rawToScenes :: Script [RawScript] -> Script [Scene]
+rawToScenes = fmap (mapMaybe f)
+    where f = either (const Nothing) Just . runParser scene () ""
 
 preprocess :: String -> [String]
 preprocess = filter (not . null) . split "Scene "
