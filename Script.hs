@@ -5,6 +5,7 @@ import Data.List (nub)
 
 data Script a = Script { scriptTitle    :: String
                        , scriptCredits  :: [String]
+                       , scriptLocation :: FilePath
                        , scriptContents :: a
                        } deriving (Eq, Show)
 

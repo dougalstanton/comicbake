@@ -11,9 +11,10 @@ import Script
 
 type ScriptParser a = GenParser Char () a
 
-rawScript :: String -> Script [RawScript]
-rawScript str = Script { scriptTitle = title
+rawScript :: String -> FilePath -> Script [RawScript]
+rawScript str path = Script { scriptTitle = title
                        , scriptCredits = credits
+                       , scriptLocation = path
                        , scriptContents = contents }
     where (headerblock,contents) = span ("-- "`isPrefixOf`) $ preprocess str
           (title:credits) = case lines (head headerblock) of
