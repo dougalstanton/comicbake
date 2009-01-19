@@ -24,13 +24,17 @@ rawScript str path = Script { scriptTitle = title
 preprocess :: String -> [String]
 preprocess = filter (not . null) . split "Scene "
 
-scene :: ScriptParser (String,Maybe String,[(String,[String])])
-scene = liftM3 (,,) sceneheader (eols >> scenedescription) speeches
+scene :: ScriptParser Scene
+scene = do (n,fn) <- sceneheader
+           desc <- (eols >> scenedescription)
+           dialogue <- speeches
+           return $ Scene { sceneDialogue = map Right dialogue, sceneNumber = read n, sceneDescription = desc, sceneBackground = fn }
 
-sceneheader :: ScriptParser String
-sceneheader = do    many1 digit <?> "scene number"
+sceneheader :: ScriptParser (String,String)
+sceneheader = do    n <- many1 digit <?> "scene number"
                     char '.' >> spaces
-                    filename
+                    path <- filename <?> "image file"
+                    return (n, path)
 
 filename :: ScriptParser FilePath
 filename = between (char '[') (char ']') (many (noneOf "]\n"))
@@ -43,6 +47,7 @@ scenedescription = do (try (char '(') >>
 
 speeches = eols >> (many speech <?> "speeches")
 
+speech :: ScriptParser Speech
 speech = liftM2 (,) speaker (newline >> spoken) <?> "speech"
 
 speaker :: ScriptParser String
