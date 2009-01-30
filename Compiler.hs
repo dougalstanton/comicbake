@@ -6,7 +6,7 @@ import System.FilePath (takeDirectory, replaceExtension, combine)
 import Script
 import CastList
 
-import ScriptParse
+import Parse
 import ImageMapParse
 
 readScript :: FilePath -> IO (Script [Scene])
