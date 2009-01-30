@@ -16,8 +16,14 @@ data Scene = Scene
                 { sceneNumber       :: Int
                 , sceneDescription  :: Maybe String
                 , sceneDialogue     :: Dialogue
-                , sceneBackground   :: String
+                , sceneBackground   :: FilePath
                 } deriving (Eq, Show)
+
+data Panel = Panel
+                { panelBackground :: FilePath
+                , panelDialogue   :: [Speech]
+                , panelCharacters :: [(Character,[Integer])]
+                }
 
 type Dialogue = [Monologue]
 type Monologue = Either Cue Speech
