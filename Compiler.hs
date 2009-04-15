@@ -2,6 +2,7 @@ module Main where
 
 import Control.Monad (liftM)
 import System.FilePath (takeDirectory, replaceExtension, combine)
+import System.Environment
 
 import Script
 import CastList
@@ -40,3 +41,7 @@ stageN castlist scene = scene { sceneDialogue = map (shift (actorsInPlace castli
         where shift :: (b -> a) -> Either a b -> Either a b
               shift f (Right r) = Left (f r)
               dialogue = sceneDialogue scene
+
+
+main = getArgs >>= readScript . head >>= stage3 >>= print
+
