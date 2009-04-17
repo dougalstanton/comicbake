@@ -17,24 +17,26 @@ space = char ' '
 spaces = many1 space
 newlines = many newline
 
-scenekw = string "Scene"
+scenekw = string "Scene" <?> "scene header"
 
--- todo: doesn't handle eof properly
-script = do s <- many (newlines >> (sceneheader <|> action))
-	    eof
-	    return s
+script = manyTill (sceneheader <|> action) eof
 
-
+-- todo: find a proper legal filename characters
 filename = between (char '<') (char '>') legalchars
-  where legalchars = many (letter <|> char '.' <|> char '/') -- todo: fix
+  where legalchars = many (alphaNum <|> char '.' <|> char '/')
 
 sceneheader = do try scenekw ; spaces
                  num <- many1 digit ; char '.' ; many space
 		 url <- optionMaybe filename
+		 newlines
 		 return $ Start (read num) url
 
--- todo: first character of name should not be space
-action = do name <- many1 (letter <|> space) ; char ':'
+-- First character of name must be a letter
+action = do name <- realname ; char ':'
 	    speech <- many (spaces >> legalchar `manyTill` newline)
+	    newlines
             return $ Content name speech
   where legalchar = noneOf "\n\r"
+        realname = do c <- letter <?> "character name"
+                      cs <- many (letter <|> space)
+                      return (c:cs)
