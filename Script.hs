@@ -16,7 +16,7 @@ data Scene = Scene
                 { sceneNumber       :: Int
                 , sceneDescription  :: Maybe String
                 , sceneDialogue     :: Dialogue
-                , sceneBackground   :: FilePath
+                , sceneBackground   :: Maybe FilePath
                 } deriving (Eq, Show)
 
 data Panel = Panel
