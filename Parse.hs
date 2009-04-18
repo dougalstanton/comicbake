@@ -9,13 +9,31 @@ import Data.Maybe (mapMaybe)
 
 import Script
 
-data S = Start Int (Maybe String) | Content String [String]
+data S = Preamble String String String String [String]
+       | Start Int (Maybe String)
+       | Content String [String]
 	deriving (Show)
 type ScriptParser a = GenParser Char () a
 
 space = char ' '
 spaces = many1 space
 newlines = many newline
+newlines1 = many1 newline
+
+document = do p <- preamble
+	      s <- script
+              return (p:s)
+
+-- decide on data requirements and use chount or permute function
+preamble = do title  <- commentline
+	      series <- commentline
+              date   <- commentline
+              author <- commentline
+	      misc   <- many (commentline)
+	      newlines
+  	      return $ Preamble title series date author misc
+              
+ where commentline = string "--" >> spaces >> manyTill anyChar newlines1
 
 scenekw = string "Scene" <?> "scene header"
 
