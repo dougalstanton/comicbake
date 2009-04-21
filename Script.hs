@@ -3,6 +3,10 @@ module Script where
 
 import Data.List (nub)
 
+type Character = String
+type Frame     = [(Int,Int)] -- box containing character
+
+
 data Script a = Script { scriptTitle    :: String
                        , scriptCredits  :: [String]
                        , scriptLocation :: FilePath
@@ -14,29 +18,11 @@ instance Functor Script where
 
 data Scene = Scene
                 { sceneNumber       :: Int
-                , sceneDescription  :: Maybe String
-                , sceneDialogue     :: Dialogue
-                , sceneBackground   :: Maybe FilePath
+                , sceneBackground   :: FilePath
+                , sceneAction       :: [Action]
                 } deriving (Eq, Show)
 
-data Panel = Panel
-                { panelBackground :: FilePath
-                , panelDialogue   :: [Speech]
-                , panelCharacters :: [(Character,[Integer])]
-                }
-
-type Dialogue = [Monologue]
-type Monologue = Either Cue Speech
-data Cue = Cue { cueActor :: Character
-               , cueWords :: [Line]
-               , cueCoord :: Maybe [(Int,Int)]
-               } deriving (Eq, Show)
-
-type RawScript = String
-type Line = String
-type Character = String
-type Speech = (Character,[Line])
-
-cast = nub . concatMap onstage . scriptContents
-    where onstage :: Scene -> [Character]
-          onstage = map (either cueActor fst) . sceneDialogue
+data Action = Action { character :: Character
+		     , speech    :: [String]
+		     , position  :: Maybe Frame
+		     } deriving (Eq, Show)
