@@ -3,6 +3,7 @@ module Main where
 import Control.Monad (liftM)
 import System.FilePath (takeDirectory, replaceExtension, combine)
 import System.Environment
+import Data.Char (toLower)
 
 import Script
 import CastList
@@ -10,38 +11,30 @@ import CastList
 import Parse
 import ImageMapParse
 
-readScript :: FilePath -> IO (Script [Scene])
-readScript filename = parseScript `liftM` readFile filename
-    where parseScript = rawToScenes . flip rawScript path
-          path = takeDirectory filename
+readImageMap :: FilePath -> FilePath -> IO CastList
+readImageMap rootdir filename = parseImageMap `liftM` readFile location
+    where location = rootdir `combine` filename
 
-readImageMap :: FilePath -> IO CastList
-readImageMap filename = parseImageMap `liftM` readFile filename
+imageMapFromScene :: Scene -> FilePath
+imageMapFromScene scene = replaceExtension imgfile "map"
+    where imgfile = sceneBackground scene
 
--- | Look up image maps and place details of actors'
---   locations into the script.
-stage3 :: Script [Scene] -> IO (Script [Scene])
-stage3 script = do castlists <- mapM readImageMap (imgmaps script)
-                   return $ fmap (zipWith stageN castlists) script
+mapsFromScript :: FilePath -> Script [Scene] -> IO [CastList]
+mapsFromScript dir = mapM (readImageMap dir . imageMapFromScene) . scriptContents
 
-    where   imageMapName = combine (scriptLocation script) . flip replaceExtension "map"
-            imgmaps = map (imageMapName . sceneBackground) . scriptContents
+useCoords :: CastList -> Scene -> Scene
+useCoords cl s = s { sceneAction = map (annotateActionFrame cl) actions}
+    where actions = sceneAction s
 
-actorsInPlace :: CastList -> Speech -> Cue
-actorsInPlace list speech = Cue { cueActor = fst speech
-                                , cueWords = snd speech
-                                , cueCoord = getCoords (fst speech) list
-                                }
+annotateActionFrame :: CastList -> Action -> Action
+annotateActionFrame castlist action = action {position = getCoords c castlist}
+    where c = map toLower $ character action
 
--- | Given a complete list of cast locations for a scene
---   replace every instance of a bare speech in the scene
---   with the annotated equivalent.
-stageN :: CastList -> Scene -> Scene
-stageN castlist scene = scene { sceneDialogue = map (shift (actorsInPlace castlist)) dialogue }
-        where shift :: (b -> a) -> Either a b -> Either a b
-              shift f (Right r) = Left (f r)
-              dialogue = sceneDialogue scene
-
-
-main = getArgs >>= readScript . head >>= stage3 >>= print
-
+main = do [scriptfile] <- getArgs
+          res <- parseScriptFromFile scriptfile
+          case res of
+            Left e  -> putStr e
+            Right s -> f s
+  where f s = do let rootdir = takeDirectory $ scriptLocation s
+                 maps <- mapsFromScript rootdir s
+                 print $ fmap (zipWith useCoords maps) s
