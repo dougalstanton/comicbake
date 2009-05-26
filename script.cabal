@@ -1,0 +1,26 @@
+Name:                script
+Version:             0.0
+Stability:           experimental
+Description:         Compiler for generating web comics from image
+                     templates and simple scripts describing the drama.
+Synopsis:            Compiler for creating web comics
+License:             GPL
+License-file:        LICENSE
+Extra-source-files:  README,NOTES
+Author:              Dougal Stanton
+Maintainer:          dougal@dougalstanton.net
+Category:            Graphics
+Build-type:          Simple
+Cabal-version:       >= 1.2
+
+flag testing
+  description: Testing mode
+  default: False
+
+executable script
+  main-is:	     Compiler.hs
+
+  ghc-options:         -Wall
+  if flag(testing)
+    ghc-options: -Werror
+  Build-Depends:       base,containers,split,tagsoup,parsec,filepath
