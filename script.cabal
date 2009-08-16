@@ -5,7 +5,6 @@ Description:         Compiler for generating web comics from image
                      templates and simple scripts describing the drama.
 Synopsis:            Compiler for creating web comics
 License:             GPL
-License-file:        LICENSE
 Extra-source-files:  README,NOTES
 Author:              Dougal Stanton
 Maintainer:          dougal@dougalstanton.net
