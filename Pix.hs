@@ -13,14 +13,14 @@ data Pix = Pix { bgImage :: FilePath
 	       }
 
 panel2pix panel = Pix { bgImage = background panel
-                      , overlays = nulloverlay:map mkdiagram (bubbles panel)
+                      , overlays = corner:map mkdiagram (bubbles panel)
 		      , order = number panel
 		      }
 
 -- Diagrams can be accurately positioned with respect to
 -- the top-left diagram, so we need something in the
 -- corner in order to place everything else accurately.
-nulloverlay = ((0,0),empty 0 0)
+corner = ((0,0),empty 0 0)
 
 para sz = vcatA left . map (text sz)
 
