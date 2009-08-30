@@ -1,4 +1,4 @@
-module Layout where
+module Layout (Panel(..), scene2panel) where
 
 import Data.Maybe (mapMaybe)
 
@@ -24,7 +24,7 @@ midy f = y1 f + ((y2 f + y1 f)`div`2)
 data Panel = Panel { number     :: Int
 		   , background :: FilePath
 		   , characters :: [Frame]
-		   , bubbles    :: [Frame]
+		   , bubbles    :: [([String],Frame)]
 		   } deriving Show
 
 strSize :: [String] -> Dim
@@ -47,8 +47,8 @@ allPos d = fst d > 0 && snd d > 0
 -- Convert a scene into a panel
 --
 
-f :: Scene -> Panel
-f s = foldr enplace base (sceneAction s)
+scene2panel:: Scene -> Panel
+scene2panel s = foldr enplace base (sceneAction s)
  where base = Panel { number = sceneNumber s
 		    , background = sceneBackground s
 		    , characters = mapMaybe position $ sceneAction s
@@ -66,6 +66,7 @@ getlocation a fs = [d', (fst d + fst d', snd d + snd d')]
 -- Decide best place to put this speech bubble in the
 -- provided panel, then place it there.
 enplace :: Action -> Panel -> Panel
-enplace a p = p { bubbles = loc : bubbles p }
- where loc = getlocation a (characters p ++ bubbles p)
+enplace a p = p { bubbles = (speech a, loc) : bubbles p }
+ where loc = getlocation a (characters p ++ bubbleframes (bubbles p))
 
+bubbleframes = map snd

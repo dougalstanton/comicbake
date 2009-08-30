@@ -7,6 +7,8 @@ import Data.Char (toLower)
 
 import Script
 import CastList
+import Layout
+import Pix
 
 import Parse
 import ImageMapParse
@@ -37,4 +39,10 @@ main = do [scriptfile] <- getArgs
             Right s -> f s
   where f s = do let rootdir = takeDirectory $ scriptLocation s
                  maps <- mapsFromScript rootdir s
-                 print $ fmap (zipWith useCoords maps) s
+                 let s' = fmap (zipWith useCoords maps) s
+		     s''= fmap (map (panel2pix . scene2panel)) s'
+		 print s'
+		 writeall s''
+
+writeall :: Script [Pix] -> IO ()
+writeall script = mapM_ (writePix (takeDirectory $ scriptLocation script)) $ scriptContents script
