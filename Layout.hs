@@ -16,6 +16,7 @@ x2 = x1 . drop 1
 y2 = y1 . drop 1
 midx f = x1 f + ((x2 f + x1 f)`div`2)
 midy f = y1 f + ((y2 f + y1 f)`div`2)
+midpt f = (midx f, midy f)
 
 
 -- A single comic panel, with speech bubbles,
@@ -24,11 +25,11 @@ midy f = y1 f + ((y2 f + y1 f)`div`2)
 data Panel = Panel { number     :: Int
 		   , background :: FilePath
 		   , characters :: [Frame]
-		   , bubbles    :: [([String],Frame)]
+		   , bubbles    :: [([String],Frame,Pt)]
 		   } deriving Show
 
 strSize :: [String] -> Dim
-strSize str = ((5*) $ maximum $ map length str, 10*length str)
+strSize str = ((5*) $ maximum $ map length str, 12*length str)
 
 oddsweep = reverse [5..11]
 evensweep = [1..7]
@@ -54,7 +55,7 @@ scene2panel s = foldr enplace base (sceneAction s)
 		    , characters = mapMaybe position $ sceneAction s
 		    , bubbles = [] }
 
-genlocs :: Dim -> Frame -> [Dim]
+genlocs :: Dim -> Frame -> [Pt]
 genlocs d f = [(x,y)| x <- [(x1 f - fst d)..(x2 f + fst d)], y <- [(y1 f - snd d)..(y2 f + snd d)]]
 
 getlocation :: Action -> [Frame] -> Frame
@@ -66,7 +67,8 @@ getlocation a fs = [d', (fst d + fst d', snd d + snd d')]
 -- Decide best place to put this speech bubble in the
 -- provided panel, then place it there.
 enplace :: Action -> Panel -> Panel
-enplace a p = p { bubbles = (speech a, loc) : bubbles p }
- where loc = getlocation a (characters p ++ bubbleframes (bubbles p))
+enplace a p = p { bubbles = (speech a, loc, fr) : bubbles p }
+ where loc = getlocation a (characters p ++ bubblelocs (bubbles p))
+       fr = maybe (0,0) midpt $ position a
 
-bubbleframes = map snd
+bubblelocs = map (\(_,a,_) -> a)
