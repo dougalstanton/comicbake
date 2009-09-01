@@ -22,4 +22,4 @@ executable script
   ghc-options:         -Wall
   if flag(testing)
     ghc-options: -Werror
-  Build-Depends:       base,containers,split,tagsoup,parsec,filepath
+  Build-Depends:       base,containers,split,tagsoup,parsec,filepath,diagrams
