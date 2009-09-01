@@ -41,8 +41,8 @@ main = do [scriptfile] <- getArgs
                  maps <- mapsFromScript rootdir s
                  let s' = fmap (zipWith useCoords maps) s
 		     s''= fmap (map (panel2pix . scene2panel)) s'
-		 print s'
 		 writeall s''
 
 writeall :: Script [Pix] -> IO ()
-writeall script = mapM_ (writePix (takeDirectory $ scriptLocation script)) $ scriptContents script
+writeall script = mapM_ (writePix ctxdir) $ scriptContents script
+ where ctxdir = takeDirectory $ scriptLocation script
