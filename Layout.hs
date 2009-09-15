@@ -1,12 +1,11 @@
-module Layout (Panel(..), scene2panel) where
+module Layout (Panel(..), Bubble(..), scene2panel) where
 
-import Data.Maybe (mapMaybe)
+import Debug.Trace
+import Data.Maybe (mapMaybe, fromMaybe)
+import Data.List (intersect)
 
-import Script
-
-type Dim = (Int,Int)
-type Pt = Dim
-type Order = [Int]
+import Script (Script(..), IsFrame(..), Box(..), Frame, Dim, Pt)
+import Parse (Scene(..), Action(..))
 
 
 x1,y1,x2,y2 :: Frame -> Int
@@ -14,10 +13,18 @@ x1 = fst . head
 y1 = snd . head
 x2 = x1 . drop 1
 y2 = y1 . drop 1
-midx f = x1 f + ((x2 f + x1 f)`div`2)
-midy f = y1 f + ((y2 f + y1 f)`div`2)
-midpt f = (midx f, midy f)
 
+
+-- A speech bubble, a type of Frame
+data Bubble = Bubble { content :: [String]
+                     , area    :: Frame
+		     , anchor  :: Frame
+		     , fakesize:: Dim
+		     } deriving (Eq,Show)
+
+instance IsFrame Bubble where
+ dim	= fakesize
+ coords	= area
 
 -- A single comic panel, with speech bubbles,
 -- character outlines, etc.
@@ -25,50 +32,68 @@ midpt f = (midx f, midy f)
 data Panel = Panel { number     :: Int
 		   , background :: FilePath
 		   , characters :: [Frame]
-		   , bubbles    :: [([String],Frame,Pt)]
+		   , bubbles    :: [Bubble]
+		   , lowpt      :: Pt
 		   } deriving Show
 
+-- this is total guesswork, which gives wrong
+-- results most of the time. awesome!
 strSize :: [String] -> Dim
-strSize str = ((5*) $ maximum $ map length str, 12*length str)
-
-oddsweep = reverse [5..11]
-evensweep = [1..7]
-
-
-inFrames :: [Frame] -> Pt -> Bool
-inFrames fs pt = any (inLine pt) fs
-  where inFrame d f = fst d < x2 f && fst d > x1 f || snd d < y2 f && snd d > y1 f
-	-- Is this point in the same row as a frame?
-        inLine p f = snd p < y2 f && snd p > y1 f
-
-allPos :: Dim -> Bool
-allPos d = fst d > 0 && snd d > 0
+strSize str = (width, height)
+  where height = 30 + (15*length str) -- 12pt + leading + tail
+        width = (7*) $ maximum $ map length str
 
 --
 -- Convert a scene into a panel
 --
 
 scene2panel:: Scene -> Panel
-scene2panel s = foldr enplace base (sceneAction s)
+scene2panel s = foldl stick base (sceneAction s)
  where base = Panel { number = sceneNumber s
 		    , background = sceneBackground s
 		    , characters = mapMaybe position $ sceneAction s
-		    , bubbles = [] }
+		    , bubbles = []
+		    , lowpt = (0,0) }
 
-genlocs :: Dim -> Frame -> [Pt]
-genlocs d f = [(x,y)| x <- [(x1 f - fst d)..(x2 f + fst d)], y <- [(y1 f - snd d)..(y2 f + snd d)]]
+-- we're missing test for fr2 inside fr1
+overlaps :: Frame -> Frame -> Bool
+overlaps fr1 fr2 = a || b
+ where a = overlapsV fr1 fr2 && overlapsH fr1 fr2
+       b = overlapsV fr2 fr1 && overlapsH fr2 fr1
 
-getlocation :: Action -> [Frame] -> Frame
-getlocation a fs = [d', (fst d + fst d', snd d + snd d')]
-	where d' = head $ filter allPos $ filter (not . inFrames fs) $ genlocs d (maybe origin id $ position a)
-              d = strSize $ speech a
-	      origin = [(0,0),(0,0)]
+overlapsH :: Frame -> Frame -> Bool
+overlapsH fr1 fr2 = a || b
+ where a = between (x2 fr1) (x1 fr2) (x2 fr2) -- left/right
+       b = between (x1 fr1) (x1 fr2) (x2 fr2) -- right/left
+       between l m n = m > l && m < n
+overlapsV :: Frame -> Frame -> Bool
+overlapsV fr1 fr2 = a || b
+ where a = between (y2 fr1) (y1 fr2) (y2 fr2) -- bottom/top
+       b = between (y1 fr1) (y1 fr2) (y2 fr2) -- top/bottom
+       between l m n = m > l && m < n
 
--- Decide best place to put this speech bubble in the
--- provided panel, then place it there.
-enplace :: Action -> Panel -> Panel
-enplace a p = p { bubbles = (speech a, loc, fr) : bubbles p }
- where loc = getlocation a (characters p ++ bubblelocs (bubbles p))
-       fr = maybe (0,0) midpt $ position a
+invalid :: [Frame] -> Frame -> Bool
+invalid curs new = any (not . overlaps new) curs
 
-bubblelocs = map (\(_,a,_) -> a)
+candidates :: Frame -> Pt -> Dim -> [Frame]
+candidates fr (_,lowy) (w,h) = pts
+ where pts = [[(x,y),(x+w,y+h)] | y <- [lowy`max`(y1 fr - h)..y2 fr]
+                                , x <- [0`max`(x1 fr - w)..x2 fr]]
+
+search frame lowpt dim = concatMap (candidates frame lowpt) dims
+ where multpair (x,y) m = (x*m,y*m)
+       dims = map (multpair dim) [1..4]
+
+stick :: Panel -> Action -> Panel
+stick p a = p { bubbles = newbubble : bubbles p }
+ where size = strSize $ speech a
+       lowpt = if null (bubbles p) then (0,0)
+                  else maximum $ map (head.tail.area) (bubbles p)
+       charbox = fromMaybe [(0,0),(0,0)] (position a)
+       cands = filter (invalid used) $ search charbox lowpt size
+       used = map coords (bubbles p) ++ characters p
+       newbubble = Bubble { content = speech a
+                          , anchor = charbox
+			  , fakesize = size
+			  , area = head cands }
+

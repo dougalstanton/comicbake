@@ -6,11 +6,11 @@ import System.Environment
 import Data.Char (toLower)
 
 import Script
-import CastList
+import Parse
 import Layout
 import Pix
 
-import Parse
+import CastList
 import ImageMapParse
 
 readImageMap :: FilePath -> FilePath -> IO CastList

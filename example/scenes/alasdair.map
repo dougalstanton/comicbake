@@ -5,7 +5,7 @@
 <!-- #$-:GIMP Image Map plug-in by Maurits Rijk -->
 <!-- #$-:Please do not edit lines starting with "#$" -->
 <!-- #$VERSION:2.3 -->
-<!-- #$AUTHOR:Dougal Stanton -->
-<area shape="rect" coords="224,73,366,248" href="alasdair" />
+<!-- #$AUTHOR:Dougal Stanton  -->
+<area shape="rect" coords="252,112,360,241" href="alasdair" />
 <area shape="rect" coords="255,227,289,273" href="food" />
 </map>

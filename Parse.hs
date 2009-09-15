@@ -1,4 +1,5 @@
-module Parse (parseScript, parseScriptFromFile) where
+module Parse (Scene (..), Action (..),
+              parseScript, parseScriptFromFile) where
 
 import Text.ParserCombinators.Parsec hiding (space, spaces)
 import Text.ParserCombinators.Parsec.Error
@@ -6,7 +7,19 @@ import Data.Maybe
 import Data.List.Split (split, dropInitBlank, keepDelimsL, whenElt)
 import Data.List (mapAccumL)
 
-import Script
+import Script (Script(..), Character, Frame)
+
+data Scene = Scene
+    { sceneNumber     :: Int
+    , sceneBackground :: FilePath
+    , sceneAction     :: [Action]
+    } deriving (Eq, Show)
+
+data Action = Action
+    { character :: Character
+    , speech    :: [String]
+    , position  :: Maybe Frame
+    } deriving (Eq, Show)
 
 parseScriptFromFile fp = parseScript fp `fmap` readFile fp
 
