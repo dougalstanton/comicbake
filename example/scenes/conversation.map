@@ -1,0 +1,11 @@
+<img src="conversation.png" width="500" height="306" border="0" usemap="#map" />
+
+<map name="map">
+<!-- #$-:Image map file created by GIMP Image Map plug-in -->
+<!-- #$-:GIMP Image Map plug-in by Maurits Rijk -->
+<!-- #$-:Please do not edit lines starting with "#$" -->
+<!-- #$VERSION:2.3 -->
+<!-- #$AUTHOR:Dougal Stanton -->
+<area shape="rect" coords="46,29,108,88" href="woman" />
+<area shape="rect" coords="426,9,494,73" href="man" />
+</map>
