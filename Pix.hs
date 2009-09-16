@@ -1,5 +1,6 @@
 module Pix (Pix(..), panel2pix, writePix) where
 
+import Debug.Trace
 import Graphics.Rendering.Diagrams
 import qualified Graphics.Rendering.Diagrams.Types as DT
 import System.FilePath (combine)
@@ -20,7 +21,8 @@ panel2pix panel = Pix { bgImage = background panel
                       , overlays = corner:diagrams
 		      , order = number panel
 		      }
- where diagrams = map mkdiagram (bubbles panel) ++ map mkdebug (bubbles panel)
+ where diagrams = map mkdiagram (bubbles panel)
+                  -- ++ concatMap mkdebug (bubbles panel)
 
 -- Diagrams can be accurately positioned with respect to
 -- the top-left diagram, so we need something in the
@@ -44,9 +46,12 @@ entail (fx,fy) (bx,by) = if by>fy then above tail else below tail
        transform = ((if bx>fx then negate else id) *** (if by<fy then negate else id))
        pts = [(0,0),(1,-1),(1,0)]
 
-mkdebug :: Bubble -> (DT.Point, DT.Diagram)
-mkdebug b = (fi2 (loc b), uncurry rect (fi2 (fakesize b)))
+mkdebug :: Bubble -> [(DT.Point, DT.Diagram)]
+mkdebug b = [bub,hed]
  where fi2 = fromIntegral *** fromIntegral
+       bub = (fi2 (loc b), uncurry rect (fi2 (fakesize b)))
+       heddim ((x1,y1):(x2,y2):_) = (x2-x1, y2-y1)
+       hed = (fi2 $ head $ anchor b, uncurry rect $ fi2 $ heddim $ anchor b)
 
 mkdiagram :: Bubble -> (DT.Point, DT.Diagram)
 mkdiagram b = (bloc, entail floc bloc (plainbubble (content b)))
