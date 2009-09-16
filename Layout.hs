@@ -55,7 +55,6 @@ scene2panel s = foldl stick base (sceneAction s)
 		    , bubbles = []
 		    , lowpt = (0,0) }
 
--- we're missing test for fr2 inside fr1
 overlaps :: Frame -> Frame -> Bool
 overlaps fr1 fr2 = a || b
  where a = overlapsV fr1 fr2 && overlapsH fr1 fr2
