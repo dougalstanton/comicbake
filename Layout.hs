@@ -75,12 +75,19 @@ overlapsV fr1 fr2 = a || b
 invalid :: [Frame] -> Frame -> Bool
 invalid curs new = any (not . overlaps new) curs
 
-candidates :: Frame -> Pt -> Dim -> [Frame]
-candidates fr (_,lowy) (w,h) = pts
- where pts = [[(x,y),(x+w,y+h)] | y <- [lowy`max`(y1 fr - h)..y2 fr]
-                                , x <- [0`max`(x1 fr - w)..x2 fr]]
+-- look for some candidate spaces around the given
+-- frame, beneath the given point for a new frame
+-- of the quoted dimensions. The area to look in
+-- is given in the next argument.
+candidates :: Frame -> Pt -> Dim -> Dim -> [Frame]
+candidates fr (_,lowy) (w,h) (w',h') = pts
+ where pts = [[(x,y),(x+w,y+h)] | y <- [lowy`max`(y1 fr - h')..y2 fr]
+                                , x <- [0`max`(x1 fr - w')..x2 fr]]
 
-search frame lowpt dim = concatMap (candidates frame lowpt) dims
+-- repeatedly look for candidates in wider and wider
+-- region around the character frame
+search :: Frame -> Pt -> Dim -> [Frame]
+search frame lowpt dim = concatMap (candidates frame lowpt dim) dims
  where multpair (x,y) m = (x*m,y*m)
        dims = map (multpair dim) [1..4]
 
