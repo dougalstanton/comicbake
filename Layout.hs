@@ -3,6 +3,7 @@ module Layout (Panel(..), Bubble(..), scene2panel) where
 import Debug.Trace
 import Data.Maybe (mapMaybe, fromMaybe)
 import Data.List (intersect)
+import Data.Ix (inRange)
 
 import Script (Script(..), IsFrame(..), Box(..), Frame, Dim, Pt)
 import Parse (Scene(..), Action(..))
@@ -62,14 +63,14 @@ overlaps fr1 fr2 = a || b
 
 overlapsH :: Frame -> Frame -> Bool
 overlapsH fr1 fr2 = a || b
- where a = between (x2 fr1) (x1 fr2) (x2 fr2) -- left/right
-       b = between (x1 fr1) (x1 fr2) (x2 fr2) -- right/left
-       between l m n = l > m && l < n
+ where a = (x2 fr1) `between` (x1 fr2, x2 fr2) -- left/right
+       b = (x1 fr1) `between` (x1 fr2, x2 fr2) -- right/left
+       between = flip inRange
 overlapsV :: Frame -> Frame -> Bool
 overlapsV fr1 fr2 = a || b
- where a = between (y2 fr1) (y1 fr2) (y2 fr2) -- bottom/top
-       b = between (y1 fr1) (y1 fr2) (y2 fr2) -- top/bottom
-       between l m n = l > m && l < n
+ where a = (y2 fr1) `between` (y1 fr2, y2 fr2) -- bottom/top
+       b = (y1 fr1) `between` (y1 fr2, y2 fr2) -- top/bottom
+       between = flip inRange
 
 invalid :: [Frame] -> Frame -> Bool
 invalid curs new = any (not . overlaps new) curs
