@@ -11,8 +11,8 @@ import Parse (Scene(..), Action(..))
 x1,y1,x2,y2 :: Frame -> Int
 x1 = fst . head
 y1 = snd . head
-x2 = x1 . drop 1
-y2 = y1 . drop 1
+x2 = x1 . tail
+y2 = y1 . tail
 
 
 -- A speech bubble, a type of Frame
@@ -64,12 +64,12 @@ overlapsH :: Frame -> Frame -> Bool
 overlapsH fr1 fr2 = a || b
  where a = between (x2 fr1) (x1 fr2) (x2 fr2) -- left/right
        b = between (x1 fr1) (x1 fr2) (x2 fr2) -- right/left
-       between l m n = m > l && m < n
+       between l m n = l > m && l < n
 overlapsV :: Frame -> Frame -> Bool
 overlapsV fr1 fr2 = a || b
  where a = between (y2 fr1) (y1 fr2) (y2 fr2) -- bottom/top
        b = between (y1 fr1) (y1 fr2) (y2 fr2) -- top/bottom
-       between l m n = m > l && m < n
+       between l m n = l > m && l < n
 
 invalid :: [Frame] -> Frame -> Bool
 invalid curs new = any (not . overlaps new) curs
