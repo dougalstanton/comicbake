@@ -16,7 +16,7 @@ flag testing
   description: Testing mode
   default: False
 
-executable script
+executable comicbake
   main-is:	     Compiler.hs
 
   ghc-options:         -Wall
