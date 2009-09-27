@@ -62,6 +62,7 @@ scene2panel s = foldl stick base (sceneAction s)
 		    , bubbles = []
 		    , lowpt = (0,0) }
 
+-- Test if two boxes overlap.
 overlaps :: Box -> Box -> Bool
 overlaps box1 box2 = a || b
  where a = overlapsV box1 box2 && overlapsH box1 box2
@@ -78,8 +79,10 @@ overlapsV box1 box2 = a || b
        b = (y1 box1) `between` (y1 box2, y2 box2) -- top/bottom
        between = flip inRange
 
-invalid :: [Box] -> Box -> Bool
-invalid curs new = any (not . overlaps new) curs
+-- Check that a candidate box doesn't overlap
+-- any previously-used areas.
+overlapping :: [Box] -> Box -> Bool
+overlapping curs new = any (not . overlaps new) curs
 
 -- look for some candidate spaces around the given
 -- frame, beneath the given point for a new frame
@@ -98,16 +101,18 @@ search box low wh = concatMap (candidates box low wh) searchareas
  where multpair pair m = (m * x pair,m * y pair)
        searchareas = map (multpair wh) [1..4]
 
+-- Place a new speech bubble into the current
+-- comic panel.
 stick :: Panel -> Action -> Panel
 stick p a = p { bubbles = newbubble : bubbles p
               , lowpt = bottomright (area newbubble)
 	      }
  where size = strSize $ speech a
-       cands = filter (invalid used) $ search newcharacter (lowpt p) size
+       cands = filter (overlapping used) $ search newchar (lowpt p) size
        used = map area (bubbles p) ++ characters p
-       newcharacter = maybe nullbox frame2box (position a)
+       newchar = maybe nullbox frame2box (position a)
        newbubble = Bubble { content = speech a
-                          , anchor = newcharacter
+                          , anchor = newchar
 			  , fakesize = size
 			  , area = head cands }
 
