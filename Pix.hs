@@ -1,66 +1,46 @@
-module Pix (Pix(..), panel2pix, writePix) where
+module Pix where
 
-import Debug.Trace
-import Graphics.Rendering.Diagrams
-import qualified Graphics.Rendering.Diagrams.Types as DT
-import System.FilePath (combine)
-import Control.Arrow ((***))
+import Graphics.GD
+import System.FilePath ((</>))
+import Control.Monad (forM_)
 
-import Script (Script(..), IsFrame(..), Frame, Pt)
+import Script (IsFrame(..), Box(..))
 import Layout (Panel(..), Bubble(..))
 
-data Pix = Pix { bgImage :: FilePath
-               , overlays :: [(DT.Point, DT.Diagram)]
-	       , order :: Int
-	       }
+data ImgWriter = ImgAction { action :: (Image -> IO ()) }
 
-type Dim = (Int,Int)
+data Pix = Pix { bgImage  :: FilePath
+               , overlays :: [ImgWriter]
+	       , order    :: Int
+	       }
 
 panel2pix :: Panel -> Pix
 panel2pix panel = Pix { bgImage = background panel
-                      , overlays = corner:diagrams
+                      , overlays = drawHeadBoxes panel ++ drawBubbleBoxes panel
 		      , order = number panel
 		      }
- where diagrams = map mkdiagram (bubbles panel)
-                  -- ++ concatMap mkdebug (bubbles panel)
 
--- Diagrams can be accurately positioned with respect to
--- the top-left diagram, so we need something in the
--- corner in order to place everything else accurately.
-corner :: (DT.Point, DT.Diagram)
-corner = ((0,0),empty 0 0)
+writePix :: FilePath -> Pix -> IO ()
+writePix rootdir pix = do
+  let filename = "frame" ++ show (order pix) ++ ".png"
+  let actions = map action . overlays $ pix
+  imgptr <- loadPngFile (rootdir </> bgImage pix)
+  forM_ actions ($imgptr)
+  savePngFile filename imgptr
 
-underlay a b = a `withSize` b ## b
-above a b = let a' = a `withSize` b in vcatA hcenter [a', b]
-below a b = let a' = a `withSize` b in vcatA hcenter [b,a']
-para sz = vcatA left . map (text sz)
+--
+--
+--
+drawBubbleBoxes :: Panel -> [ImgWriter]
+drawBubbleBoxes = map (ImgAction . drawEllipse . area) . bubbles
 
-plainbubble :: [String] -> Diagram
-plainbubble strs = bubble `underlay` writing
- where bubble w h = fc white $ lc white $ roundRect (w*1.2) (h*1.2)
-       writing = para 12 strs
+drawHeadBoxes :: Panel -> [ImgWriter]
+drawHeadBoxes = map (ImgAction . drawBox . anchor) . bubbles
 
-entail :: DT.Point -> DT.Point -> Diagram -> Diagram
-entail (fx,fy) (bx,by) = if by>fy then above tail else below tail
- where tail w h = fc white $ lc white $ curved 0 $ pathFromVertices $ map transform $ map (\(x,y) -> (x*w/3, y*h/2)) pts
-       transform = ((if bx>fx then negate else id) *** (if by<fy then negate else id))
-       pts = [(0,0),(1,-1),(1,0)]
+drawBox :: Box -> Image -> IO ()
+drawBox box = drawFilledRectangle (topleft box) (bottomright box) white
+ where white = rgb 255 255 255
 
-mkdebug :: Bubble -> [(DT.Point, DT.Diagram)]
-mkdebug b = [bub,hed]
- where fi2 = fromIntegral *** fromIntegral
-       bub = (fi2 (loc b), uncurry rect (fi2 (fakesize b)))
-       heddim ((x1,y1):(x2,y2):_) = (x2-x1, y2-y1)
-       hed = (fi2 $ head $ anchor b, uncurry rect $ fi2 $ heddim $ anchor b)
-
-mkdiagram :: Bubble -> (DT.Point, DT.Diagram)
-mkdiagram b = (bloc, entail floc bloc (plainbubble (content b)))
-   where floc = ((/2) . fi *** (/2) .fi) $ foldr sumpair (0,0) $ anchor b
-         bloc = (fi *** fi) $ loc b
-	 fi = fromIntegral
-	 sumpair (x1,y1) (x2,y2) = (x1+x2,y1+y2)
-
--- renderOverlayPNG <- srcfile dstfile diagram
-writePix dir pix = renderOverPNG (dir `combine` bgImage pix) fn d
- where d = position $ overlays pix
-       fn = "frame" ++ show (order pix) ++ ".png"
+drawEllipse :: Box -> Image -> IO ()
+drawEllipse box = drawFilledEllipse (midpoint box) (dim box) red
+ where red = rgb 255 0 0

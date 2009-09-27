@@ -1,38 +1,44 @@
 module Layout (Panel(..), Bubble(..), scene2panel) where
 
-import Debug.Trace
-import Data.Maybe (mapMaybe, fromMaybe)
-import Data.List (intersect)
+import Data.Maybe (mapMaybe)
 import Data.Ix (inRange)
 
-import Script (Script(..), IsFrame(..), Box(..), Frame, Dim, Pt)
+import Script (IsFrame(..), Box(..), Frame, Dim, Pt)
 import Parse (Scene(..), Action(..))
 
+-- Some selection functions
+x, y :: Pt -> Int
+x = fst
+y = snd
+x1,y1,x2,y2 :: Box -> Int
+x1 = x . topleft
+y1 = y . topleft
+x2 = x . bottomright
+y2 = y . bottomright
 
-x1,y1,x2,y2 :: Frame -> Int
-x1 = fst . head
-y1 = snd . head
-x2 = x1 . tail
-y2 = y1 . tail
-
+nullbox :: Box
+nullbox = Box (0,0) (0,0)
+frame2box :: Frame -> Box
+frame2box (pt1:pt2:_) = Box pt1 pt2
+frame2box _ = nullbox -- maybe an error?
 
 -- A speech bubble, a type of Frame
 data Bubble = Bubble { content :: [String]
-                     , area    :: Frame
-		     , anchor  :: Frame
+                     , area    :: Box
+		     , anchor  :: Box
 		     , fakesize:: Dim
 		     } deriving (Eq,Show)
 
 instance IsFrame Bubble where
  dim	= fakesize
- coords	= area
+ coords	= coords . area
 
 -- A single comic panel, with speech bubbles,
 -- character outlines, etc.
 
 data Panel = Panel { number     :: Int
 		   , background :: FilePath
-		   , characters :: [Frame]
+		   , characters :: [Box]
 		   , bubbles    :: [Bubble]
 		   , lowpt      :: Pt
 		   } deriving Show
@@ -40,7 +46,7 @@ data Panel = Panel { number     :: Int
 -- this is total guesswork, which gives wrong
 -- results most of the time. awesome!
 strSize :: [String] -> Dim
-strSize str = (width, height)
+strSize str = (width*2`div`3, height*2`div`3)
   where height = 30 + (15*length str) -- 12pt + leading + tail
         width = (7*) $ maximum $ map length str
 
@@ -52,55 +58,56 @@ scene2panel:: Scene -> Panel
 scene2panel s = foldl stick base (sceneAction s)
  where base = Panel { number = sceneNumber s
 		    , background = sceneBackground s
-		    , characters = mapMaybe position $ sceneAction s
+		    , characters = map frame2box $ mapMaybe position $ sceneAction s
 		    , bubbles = []
 		    , lowpt = (0,0) }
 
-overlaps :: Frame -> Frame -> Bool
-overlaps fr1 fr2 = a || b
- where a = overlapsV fr1 fr2 && overlapsH fr1 fr2
-       b = overlapsV fr2 fr1 && overlapsH fr2 fr1
+overlaps :: Box -> Box -> Bool
+overlaps box1 box2 = a || b
+ where a = overlapsV box1 box2 && overlapsH box1 box2
+       b = overlapsV box2 box1 && overlapsH box2 box1
 
-overlapsH :: Frame -> Frame -> Bool
-overlapsH fr1 fr2 = a || b
- where a = (x2 fr1) `between` (x1 fr2, x2 fr2) -- left/right
-       b = (x1 fr1) `between` (x1 fr2, x2 fr2) -- right/left
+overlapsH :: Box -> Box -> Bool
+overlapsH box1 box2 = a || b
+ where a = (x2 box1) `between` (x1 box2, x2 box2) -- left/right
+       b = (x1 box1) `between` (x1 box2, x2 box2) -- right/left
        between = flip inRange
-overlapsV :: Frame -> Frame -> Bool
-overlapsV fr1 fr2 = a || b
- where a = (y2 fr1) `between` (y1 fr2, y2 fr2) -- bottom/top
-       b = (y1 fr1) `between` (y1 fr2, y2 fr2) -- top/bottom
+overlapsV :: Box -> Box -> Bool
+overlapsV box1 box2 = a || b
+ where a = (y2 box1) `between` (y1 box2, y2 box2) -- bottom/top
+       b = (y1 box1) `between` (y1 box2, y2 box2) -- top/bottom
        between = flip inRange
 
-invalid :: [Frame] -> Frame -> Bool
+invalid :: [Box] -> Box -> Bool
 invalid curs new = any (not . overlaps new) curs
 
 -- look for some candidate spaces around the given
 -- frame, beneath the given point for a new frame
 -- of the quoted dimensions. The area to look in
 -- is given in the next argument.
-candidates :: Frame -> Pt -> Dim -> Dim -> [Frame]
-candidates fr (_,lowy) (w,h) (w',h') = pts
- where pts = [[(x,y),(x+w,y+h)] | y <- [lowy`max`(y1 fr - h')..y2 fr]
-                                , x <- [0`max`(x1 fr - w')..x2 fr]]
+candidates :: Box -> Pt -> Dim -> Dim -> [Box]
+candidates box (_,lowy) (w,h) (w',h') = pts
+ where pts = [Box (x',y') (x'+w,y'+h)
+             | y' <- [lowy`max`(y1 box - h')..y2 box]
+             , x' <- [0`max`(x1 box - w')..x2 box]]
 
 -- repeatedly look for candidates in wider and wider
 -- region around the character frame
-search :: Frame -> Pt -> Dim -> [Frame]
-search frame lowpt dim = concatMap (candidates frame lowpt dim) dims
- where multpair (x,y) m = (x*m,y*m)
-       dims = map (multpair dim) [1..4]
+search :: Box -> Pt -> Dim -> [Box]
+search box low wh = concatMap (candidates box low wh) searchareas
+ where multpair pair m = (m * x pair,m * y pair)
+       searchareas = map (multpair wh) [1..4]
 
 stick :: Panel -> Action -> Panel
-stick p a = p { bubbles = newbubble : bubbles p }
+stick p a = p { bubbles = newbubble : bubbles p
+              , lowpt = bottomright (area newbubble)
+	      }
  where size = strSize $ speech a
-       lowpt = if null (bubbles p) then (0,0)
-                  else maximum $ map (head.tail.area) (bubbles p)
-       charbox = fromMaybe [(0,0),(0,0)] (position a)
-       cands = filter (invalid used) $ search charbox lowpt size
-       used = map coords (bubbles p) ++ characters p
+       cands = filter (invalid used) $ search newcharacter (lowpt p) size
+       used = map area (bubbles p) ++ characters p
+       newcharacter = maybe nullbox frame2box (position a)
        newbubble = Bubble { content = speech a
-                          , anchor = charbox
+                          , anchor = newcharacter
 			  , fakesize = size
 			  , area = head cands }
 

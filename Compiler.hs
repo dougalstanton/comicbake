@@ -29,9 +29,10 @@ useCoords cl s = s { sceneAction = map (annotateActionFrame cl) actions}
     where actions = sceneAction s
 
 annotateActionFrame :: CastList -> Action -> Action
-annotateActionFrame castlist action = action {position = getCoords c castlist}
-    where c = map toLower $ character action
+annotateActionFrame castlist a = a {position = getCoords c castlist}
+    where c = map toLower $ character a
 
+main :: IO ()
 main = do [scriptfile] <- getArgs
           res <- parseScriptFromFile scriptfile
           case res of
