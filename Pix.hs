@@ -15,7 +15,7 @@ data Pix = Pix { bgImage  :: FilePath
 	       }
 
 panel2pix :: Panel -> Pix
-panel2pix panel = Pix { bgImage = background panel
+panel2pix panel = Pix { bgImage = fst $ background panel -- ignore size
                       , overlays = drawHeadBoxes panel ++ drawBubbleBoxes panel
 		      , order = number panel
 		      }

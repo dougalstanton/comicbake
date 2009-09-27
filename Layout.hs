@@ -37,7 +37,7 @@ instance IsFrame Bubble where
 -- character outlines, etc.
 
 data Panel = Panel { number     :: Int
-		   , background :: FilePath
+		   , background :: (FilePath,Dim)
 		   , characters :: [Box]
 		   , bubbles    :: [Bubble]
 		   , lowpt      :: Pt
@@ -54,10 +54,10 @@ strSize str = (width*2`div`3, height*2`div`3)
 -- Convert a scene into a panel
 --
 
-scene2panel:: Scene -> Panel
-scene2panel s = foldl stick base (sceneAction s)
+scene2panel:: Dim -> Scene -> Panel
+scene2panel bgsize s = foldl stick base (sceneAction s)
  where base = Panel { number = sceneNumber s
-		    , background = sceneBackground s
+		    , background = (sceneBackground s, bgsize)
 		    , characters = map frame2box $ mapMaybe position $ sceneAction s
 		    , bubbles = []
 		    , lowpt = (0,0) }

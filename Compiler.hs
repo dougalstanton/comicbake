@@ -5,6 +5,8 @@ import System.FilePath (takeDirectory, replaceExtension, combine)
 import System.Environment
 import Data.Char (toLower)
 
+import Graphics.GD (loadPngFile, imageSize)
+
 import Script
 import Parse
 import Layout
@@ -32,6 +34,13 @@ annotateActionFrame :: CastList -> Action -> Action
 annotateActionFrame castlist a = a {position = getCoords c castlist}
     where c = map toLower $ character a
 
+imageSizesFromScript :: FilePath -> Script [Scene] -> IO [Dim]
+imageSizesFromScript ctxdir = mapM (getImgSize ctxdir) . scriptContents
+
+getImgSize :: FilePath -> Scene -> IO Dim
+getImgSize ctxdir scene = loadPngFile imgfile >>= imageSize
+  where imgfile = ctxdir `combine` sceneBackground scene
+
 main :: IO ()
 main = do [scriptfile] <- getArgs
           res <- parseScriptFromFile scriptfile
@@ -39,11 +48,12 @@ main = do [scriptfile] <- getArgs
             Left e  -> putStr e
             Right s -> f s
   where f s = do let rootdir = takeDirectory $ scriptLocation s
-                 maps <- mapsFromScript rootdir s
-                 let s' = fmap (zipWith useCoords maps) s
-		     s''= fmap (map (panel2pix . scene2panel)) s'
-		 writeall s''
+  		 maps <- mapsFromScript rootdir s
+		 let s1 = fmap (zipWith useCoords maps) s
+		 bgsizes <- imageSizesFromScript rootdir s1
+		 let s2 = fmap (zipWith scene2panel bgsizes) s1
+		 let s3 = fmap (map panel2pix) s2
+		 writeall rootdir s3
 
-writeall :: Script [Pix] -> IO ()
-writeall script = mapM_ (writePix ctxdir) $ scriptContents script
- where ctxdir = takeDirectory $ scriptLocation script
+writeall :: FilePath -> Script [Pix] -> IO ()
+writeall ctxdir = mapM_ (writePix ctxdir) . scriptContents
