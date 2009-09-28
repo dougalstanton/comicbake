@@ -26,6 +26,8 @@ instance IsFrame Box where
  dim b = let (x1,y1) = topleft b
              (x2,y2) = bottomright b
 	 in (x2-x1, y2-y1)
+instance Ord Box where
+ b1 < b2 = topleft b1 < topleft b2
 
 data Script a = Script
     { scriptTitle    :: String
