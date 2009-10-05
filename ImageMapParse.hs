@@ -11,5 +11,5 @@ parseImageMap = foldr (uncurry addCharacter) emptyCast . map getData . keepAreaT
           readCoords str = read ('[':str ++ "]")
           mkCoordPairs :: [Int] -> [(Int,Int)]
           mkCoordPairs [] = []
-          mkCoordPairs [a] = []
+          mkCoordPairs [_] = []
           mkCoordPairs (a:b:ls) = (a,b):mkCoordPairs ls
