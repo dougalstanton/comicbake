@@ -41,6 +41,11 @@ getImgSize :: FilePath -> Scene -> IO Dim
 getImgSize ctxdir scene = loadPngFile imgfile >>= imageSize
   where imgfile = ctxdir `combine` sceneBackground scene
 
+txtSizesFromScript :: Script [Scene] -> IO [[Dim]]
+txtSizesFromScript = mapM (mapM (f . speech) . sceneAction) . scriptContents
+  where f strs = do (_,(x2,y2),_,(x1,y1)) <- drawText (0,0) (unlines strs) Nothing
+                    return (x2-x1,y2-y1)
+
 main :: IO ()
 main = do [scriptfile] <- getArgs
           res <- parseScriptFromFile scriptfile
@@ -51,7 +56,8 @@ main = do [scriptfile] <- getArgs
   		 maps <- mapsFromScript rootdir s
 		 let s1 = fmap (zipWith useCoords maps) s
 		 bgsizes <- imageSizesFromScript rootdir s1
-		 let s2 = fmap (zipWith scene2panel bgsizes) s1
+		 txtsizes <- txtSizesFromScript s1
+		 let s2 = fmap (zipWith3 scene2panel bgsizes txtsizes) s1
 		 let s3 = fmap (map panel2pix) s2
 		 writeall rootdir s3
 

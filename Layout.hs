@@ -26,11 +26,11 @@ frame2box _ = nullbox -- maybe an error?
 data Bubble = Bubble { content :: [String]
                      , area    :: Box
 		     , anchor  :: Box
-		     , fakesize:: Dim
+		     , size:: Dim
 		     } deriving (Eq,Show)
 
 instance IsFrame Bubble where
- dim	= fakesize
+ dim	= size
  coords	= coords . area
 
 -- A single comic panel, with speech bubbles,
@@ -43,25 +43,18 @@ data Panel = Panel { number     :: Int
 		   , lowpt      :: Pt
 		   } deriving Show
 
--- this is total guesswork, which gives wrong
--- results most of the time. awesome!
-strSize :: [String] -> Dim
-strSize str = (width*2`div`3, height*2`div`3)
-  where height = 30 + (15*length str) -- 12pt + leading + tail
-        width = (7*) $ maximum $ map length str
-
 --
 -- Convert a scene into a panel
 --
 
-scene2panel:: Dim -> Scene -> Panel
-scene2panel bgsize s = foldl stick base (sceneAction s)
+scene2panel:: Dim -> [Dim] -> Scene -> Panel
+scene2panel bgsize txtsizes s = foldl stick base sizedAction
  where base = Panel { number = sceneNumber s
 		    , background = (sceneBackground s, bgsize)
 		    , characters = map frame2box $ mapMaybe position $ sceneAction s
 		    , bubbles = []
 		    , lowpt = (0,0) }
-
+       sizedAction = zip txtsizes (sceneAction s)
 -- Test if two boxes overlap.
 overlaps :: Box -> Box -> Bool
 overlaps box1 box2 = a || b
@@ -103,16 +96,15 @@ search box low wh = concatMap (candidates box low wh) searchareas
 
 -- Place a new speech bubble into the current
 -- comic panel.
-stick :: Panel -> Action -> Panel
-stick p a = p { bubbles = newbubble : bubbles p
-              , lowpt = bottomright (area newbubble)
-	      }
- where size = strSize $ speech a
-       cands = filter (overlapping used) $ search newchar (lowpt p) size
+stick :: Panel -> (Dim,Action) -> Panel
+stick p (sz,a) = p { bubbles = newbubble : bubbles p
+                   , lowpt = bottomright (area newbubble)
+	           }
+ where cands = filter (overlapping used) $ search newchar (lowpt p) sz
        used = map area (bubbles p) ++ characters p
        newchar = maybe nullbox frame2box (position a)
        newbubble = Bubble { content = speech a
                           , anchor = newchar
-			  , fakesize = size
+			  , size = sz
 			  , area = head cands }
 
