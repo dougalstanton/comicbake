@@ -1,0 +1,82 @@
+### ComicBake
+
+A simple program for generating web comics from simple text scripts.
+
+The comic author can concentrate on the script and let the program
+convert this dialogue into final output with speech bubbles.
+
+## Introduction
+
+On the assumption that many people want to make webcomics who have
+no artistic talents for graphics, especially mediated through computer
+software, this program lets you *write* a comic. The resulting script
+is processed and combined with pre-chosen images to give a webcomic-like
+result.
+
+There are three essential parts for its operation.
+
+1. The script, where one or more characters give lines of dialogue.
+2. The background images, such as photos, which contain the same
+   characters mentioned in the script.
+3. An image map, which associates named characters with regions from
+   each image.
+
+Parts 2 and 3 can be reused for many different scripts, like templates.
+
+## Structure
+
+I guess you could consider this program a compiler, a comic strip compiler.
+
+Compare:
+
+    gcc       -o myprogram.exe -lcommon myprogram.c
+    comicbake -o episode13.png -lcommon episode13.script
+
+You see the connection, I'm sure. What we're doing, given a library of
+common background images (functions, data structures) we compile our
+script (source program) and link the resulting panels (object files)
+into a single comic strip (executable).
+
+This insight allows us to ignore the fact that this seems to be a fairly
+new type of application, and instead draw on the general knowledge of
+compiler building. It's somewhere to start!
+
+
+
+## Resources
+
+Some tools to use along the way:
+
+*   parsec: defining script format, parsing
+*   tagsoup: HTML parsing
+*   gd: graphics backed
+
+These have some lower level dependencies but they shouldn't matter at
+this point.
+
+These dependencies will change over time, as with all projects...
+
+
+## Stages
+
+The following steps more or less fit the standard compiler process of lexing,
+parsing, evaluating, code generation and linking. I'm not sure what optimisation
+would mean in this application, but presumably it would have something to do
+with layout of paragraph bubbles and such.
+
+1.  Parse the input script into preamble, sections and scene content.
+2.  Combine this into a proper syntax tree
+    * ensure at least one bg image specified (first scene)
+3.  Parse image maps for each scene and annotate script syntax tree
+    * ensure character with dialogue is visible in image
+4.  Lay out speech bubbles
+    * leave room for characters
+    * use proper left-to-right and top-to-bottom ordering
+    * apply heuristics for elegant layout
+5.  Generate output images
+6.  Create final comic
+    * stich images together
+    * create animation (animgif style)
+
+Obviously step 4 will include a lot of magic and guesswork.
+
