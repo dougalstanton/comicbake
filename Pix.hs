@@ -24,6 +24,7 @@ writePix :: FilePath -> Pix -> IO ()
 writePix rootdir pix = do
   let filename = "frame" ++ show (order pix) ++ ".png"
   let actions = map action . overlays $ pix
+  useFontConfig True
   imgptr <- loadPngFile (rootdir </> bgImage pix)
   forM_ actions ($imgptr)
   savePngFile filename imgptr
@@ -84,7 +85,7 @@ drawParagraph mimg origin strs = do
 -- Argh, the given location is the left edge of the text baseline :(
 drawText :: Point -> String -> Maybe Image -> IO (Point,Point,Point,Point)
 drawText pt str img = maybe fakestring realstring img
-  where font = "DejaVuSans"
+  where font = "ttf-dejavu/DejaVuSans"
         ptsize = 8
 	angle = 0
 	black = rgb 0 0 0
