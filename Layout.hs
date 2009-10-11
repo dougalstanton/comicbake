@@ -20,13 +20,13 @@ nullbox :: Box
 nullbox = Box (0,0) (0,0)
 frame2box :: Frame -> Box
 frame2box (pt1:pt2:_) = Box pt1 pt2
-frame2box _ = nullbox -- maybe an error?
+frame2box _ = error "Layout: Non-square areas not supported"
 
 -- A speech bubble, a type of Frame
 data Bubble = Bubble { content :: [String]
                      , area    :: Box
 		     , anchor  :: Box
-		     , size:: Dim
+		     , size    :: Dim
 		     } deriving (Eq,Show)
 
 instance IsFrame Bubble where
@@ -42,6 +42,10 @@ data Panel = Panel { number     :: Int
 		   , bubbles    :: [Bubble]
 		   , lowpt      :: Pt
 		   } deriving Show
+
+instance IsFrame Panel where
+  dim = snd . background
+  coords = error "Panel has no co-ordinates"
 
 --
 -- Convert a scene into a panel
