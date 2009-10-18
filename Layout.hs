@@ -111,8 +111,10 @@ overlapping curs new = any (not . overlaps new) curs
 candidates :: Box -> Pt -> Dim -> Dim -> [Box]
 candidates box (_,lowy) (w,h) (w',h') = pts
  where pts = [Box (x',y') (x'+w,y'+h)
-             | y' <- [lowy`max`(y1 box - h')..y2 box]
-             , x' <- [0`max`(x1 box - w')..x2 box]]
+             | y' <- [starty..y2 box]
+             , x' <- [startx..x2 box]]
+       starty = lowy + 8 `max` y1 box - h'
+       startx = 0 `max` (x1 box - w')
 
 -- repeatedly look for candidates in wider and wider
 -- region around the character frame
