@@ -2,6 +2,7 @@ module Layout (Panel(..), Bubble(..), scene2panel) where
 
 import Data.Maybe (mapMaybe)
 import Data.Ix (inRange)
+import Data.List (zipWith3)
 
 import Script (IsFrame(..), Box(..), Frame, Dim, Pt)
 import Parse (Scene(..), Action(..))
@@ -27,11 +28,24 @@ data Bubble = Bubble { content :: [String]
                      , area    :: Box
 		     , anchor  :: Box
 		     , size    :: Dim
+		     , seqnum  :: Int
 		     } deriving (Eq,Show)
 
 instance IsFrame Bubble where
  dim	= size
  coords	= coords . area
+
+-- A speech bubble that doesn't have an assigned
+-- location, but floats freely...
+data FloatingBubble = FBubble { floatingspeech :: [String]
+                              , dimension      :: Dim
+			      , characterloc   :: Box
+			      , bubbleorder    :: Int
+			      } deriving (Eq,Show)
+
+instance IsFrame FloatingBubble where
+ dim    = dimension
+ coords = coords . characterloc
 
 -- A single comic panel, with speech bubbles,
 -- character outlines, etc.
@@ -52,13 +66,22 @@ instance IsFrame Panel where
 --
 
 scene2panel:: Dim -> [Dim] -> Scene -> Panel
-scene2panel bgsize txtsizes s = foldl stick base sizedAction
+scene2panel bgsize txtsizes s = foldl stick base floating
  where base = Panel { number = sceneNumber s
 		    , background = (sceneBackground s, bgsize)
 		    , characters = map frame2box $ mapMaybe position $ sceneAction s
 		    , bubbles = []
 		    , lowpt = (0,0) }
-       sizedAction = zip txtsizes (sceneAction s)
+       floating = zipWith3 action2fbubble [1..] txtsizes (sceneAction s)
+
+action2fbubble :: Int -> Dim -> Action -> FloatingBubble
+action2fbubble i sz a =
+  FBubble { floatingspeech = speech a
+          , dimension = sz
+	  , characterloc = maybe nullbox frame2box (position a)
+	  , bubbleorder = i
+	  }
+
 -- Test if two boxes overlap.
 overlaps :: Box -> Box -> Bool
 overlaps box1 box2 = a || b
@@ -98,17 +121,17 @@ search box low wh = concatMap (candidates box low wh) searchareas
  where multpair pair m = (m * x pair,m * y pair)
        searchareas = map (multpair wh) [1..4]
 
--- Place a new speech bubble into the current
--- comic panel.
-stick :: Panel -> (Dim,Action) -> Panel
-stick p (sz,a) = p { bubbles = newbubble : bubbles p
-                   , lowpt = bottomright (area newbubble)
-	           }
+-- Stick a floating bubble into its proper place.
+stick :: Panel -> FloatingBubble -> Panel
+stick p fb = newpanel
  where cands = filter (overlapping used) $ search newchar (lowpt p) sz
        used = map area (bubbles p) ++ characters p
-       newchar = maybe nullbox frame2box (position a)
-       newbubble = Bubble { content = speech a
-                          , anchor = newchar
-			  , size = sz
-			  , area = head cands }
-
+       (sz,newchar) = (dim fb, characterloc fb)
+       newbubble = Bubble { content = floatingspeech fb
+                          , anchor  = newchar
+			  , size    = sz
+			  , area    = head cands
+			  , seqnum  = bubbleorder fb }
+       newpanel = p { bubbles = newbubble : bubbles p
+                    , lowpt   = bottomright (area newbubble)
+		    }
