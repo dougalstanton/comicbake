@@ -1,11 +1,15 @@
 module Layout (Panel(..), Bubble(..), scene2panel) where
 
-import Data.Maybe (mapMaybe)
+import Control.Arrow ((***))
+
+import Data.Maybe (mapMaybe,isJust,catMaybes)
 import Data.Ix (inRange)
-import Data.List (zipWith3)
+import Data.List (zipWith3,intercalate,sortBy,partition,genericLength,nubBy)
+import Data.Ord (comparing)
 
 import Script (IsFrame(..), Box(..), Frame, Dim, Pt)
 import Parse (Scene(..), Action(..))
+import SA
 
 -- Some selection functions
 x, y :: Pt -> Int
@@ -65,14 +69,23 @@ instance IsFrame Panel where
 -- Convert a scene into a panel
 --
 
-scene2panel:: Dim -> [Dim] -> Scene -> Panel
-scene2panel bgsize txtsizes s = foldl stick base floating
+scene2panel:: Dim -> [Dim] -> [Double] -> Scene -> Panel
+scene2panel bgsize txtsizes rands s = base {bubbles = fromGrid result}
  where base = Panel { number = sceneNumber s
 		    , background = (sceneBackground s, bgsize)
 		    , characters = map frame2box $ mapMaybe position $ sceneAction s
 		    , bubbles = []
 		    , lowpt = (0,0) }
        floating = zipWith3 action2fbubble [1..] txtsizes (sceneAction s)
+       sacfg = Config { temperature=50
+                      , coolingfactor=0.95
+		      , randoms = rands
+		      }
+       sastate = State { state = (initialGrid base floating)
+                       , value = cost
+		       , newstate = perturbGrid
+		       }
+       result = anneal sacfg sastate
 
 action2fbubble :: Int -> Dim -> Action -> FloatingBubble
 action2fbubble i sz a =
@@ -137,3 +150,84 @@ stick p fb = newpanel
        newpanel = p { bubbles = newbubble : bubbles p
                     , lowpt   = bottomright (area newbubble)
 		    }
+
+-- Mapping from co-ordinate to a sequence number.
+-- Use Nothing to represent an empty square.
+type Grid = [(Pt,Maybe FloatingBubble)]
+type Env  = [Box]
+
+-- Generate an empty grid, removing any candidate positions
+-- that are inside character frames already.
+blankGrid :: Panel -> Dim -> Grid
+blankGrid p (minwidth,minheight) = [((x,y),Nothing)
+                                   | y <- ys, x <- xs, valid (x,y)]
+  where (w,h) = dim p
+        xs = [minwidth,minwidth+minwidth..w]
+	ys = [minheight,minheight+minheight..h]
+	valid pt = overlapping (characters p) (Box pt pt) 
+
+fromGrid :: (Env,Grid) -> [Bubble]
+fromGrid (_,g) = map mkbubble filteredgrid
+  where filteredgrid = filter (isJust . snd) g
+	mkbubble (pt,Just fb) = Bubble { content = floatingspeech fb
+		                       , anchor  = characterloc fb
+				       , size    = dim fb
+				       , area    = conv pt (dim fb)
+				       , seqnum  = bubbleorder fb
+				       }
+	conv (mx,my) (w,h) = Box (mx,my) (mx+w,my+h)
+
+-- Add all the bubbles spread evenly across the panel
+-- in whatever order they arrive.
+initialGrid :: Panel -> [FloatingBubble] -> (Env,Grid)
+initialGrid p fbs = (e,g)
+  where minDims = (minimum *** minimum) $ unzip $ map dim fbs
+	grid = blankGrid p minDims
+        n = length fbs
+	m = length grid
+	incr = m`div`n
+	bubs = intercalate (replicate incr Nothing)
+	                       (map (return . Just) fbs)
+	g = zipWith (\a (b,c) -> (b,a)) bubs grid
+	e = characters p
+
+-- Determine some cost for this generated layout.
+cost :: (Env,Grid) -> Double
+cost st@(e,g) = disorderCost g + overlapCost st
+
+-- Penalise solutions where the bubbles appear
+-- out of order for the x,y co-ordinates.
+disorderCost :: Grid -> Double
+disorderCost g = sum $ map f $ zip [1..] $ map bubbleorder $ catMaybes $ map snd sorted
+  where sorted = sortBy (comparing fst) $ filter (isJust . snd) g
+        f :: (Int,Int) -> Double
+	f (a,b) = fromIntegral $ abs (a - b)
+
+-- Penalise solutions where bubbles overlap each
+-- other or the characters' faces.
+overlapCost :: (Env,Grid) -> Double
+overlapCost (e,g) = genericLength fbs - genericLength overlapfaces
+  where (pts,fbs) = unzip $ sortBy (comparing fst) $ filter (isJust . snd) g
+        mkbox (px,py) (w,h) = Box (px,py) (px+w,py+h)
+	candidates = zipWith mkbox pts $ map dim $ catMaybes fbs
+	freecandidates = nubBy overlaps candidates
+	overlapfaces = filter (overlapping e) freecandidates
+
+-- Zip together two lists using 'f', but when
+-- the shorter of the two lists ends we transform
+-- the tail of the longer list using 'g' and tag
+-- it on the end.
+longZipWith f g [] bs = map g bs
+longZipWith f g as [] = map g as
+longZipWith f g (a:as) (b:bs) = f a b : longZipWith f g as bs
+
+-- Take proportion r of the bubbles and swap their
+-- locations with the same number of empty places.
+perturbGrid :: Double -> (Env,Grid) -> (Env,Grid)
+perturbGrid r (e,g) = (e,real2 ++ empty2 ++ perturbed)
+  where (real,empty) = partition (isJust . snd) g
+        n = round $ r * genericLength real
+	(real1,real2) = splitAt n real
+	(empty1,empty2) = splitAt n empty
+        perturbed = concat $ longZipWith swap return real1 empty1
+	swap (pt1,n1) (pt2,n2) = [(pt1,n2),(pt2,n1)]

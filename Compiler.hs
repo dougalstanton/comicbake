@@ -4,6 +4,8 @@ import Control.Monad (liftM)
 import System.FilePath (takeDirectory, replaceExtension, combine)
 import System.Environment
 import Data.Char (toLower)
+import Data.List (zipWith4)
+import System.Random
 
 import Graphics.GD (loadPngFile, imageSize)
 
@@ -57,7 +59,9 @@ main = do [scriptfile] <- getArgs
 		 let s1 = fmap (zipWith useCoords maps) s
 		 bgsizes <- imageSizesFromScript rootdir s1
 		 txtsizes <- txtSizesFromScript s1
-		 let s2 = fmap (zipWith3 scene2panel bgsizes txtsizes) s1
+		 g <- getStdGen
+		 let rands = repeat (randoms g) :: [[Double]]
+		 let s2 = fmap (zipWith4 scene2panel bgsizes txtsizes rands) s1
 		 let s3 = fmap (map panel2pix) s2
 		 writeall rootdir s3
 
