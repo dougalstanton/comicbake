@@ -2,9 +2,9 @@ module Layout (Panel(..), Bubble(..), scene2panel) where
 
 import Control.Arrow ((***))
 
-import Data.Maybe (mapMaybe,isJust,catMaybes)
+import Data.Maybe (mapMaybe,isJust)
 import Data.Ix (inRange)
-import Data.List (zipWith3,intercalate,sortBy,partition,genericLength,nubBy)
+import Data.List
 import Data.Ord (comparing)
 
 import Script (IsFrame(..), Box(..), Frame, Dim, Pt)
@@ -117,64 +117,35 @@ overlapsV box1 box2 = a || b
 overlapping :: [Box] -> Box -> Bool
 overlapping curs new = any (not . overlaps new) curs
 
--- look for some candidate spaces around the given
--- frame, beneath the given point for a new frame
--- of the quoted dimensions. The area to look in
--- is given in the next argument.
-candidates :: Box -> Pt -> Dim -> Dim -> [Box]
-candidates box (_,lowy) (w,h) (w',h') = pts
- where pts = [Box (x',y') (x'+w,y'+h)
-             | y' <- [starty..y2 box]
-             , x' <- [startx..x2 box]]
-       starty = lowy + 8 `max` y1 box - h'
-       startx = 0 `max` (x1 box - w')
-
--- repeatedly look for candidates in wider and wider
--- region around the character frame
-search :: Box -> Pt -> Dim -> [Box]
-search box low wh = concatMap (candidates box low wh) searchareas
- where multpair pair m = (m * x pair,m * y pair)
-       searchareas = map (multpair wh) [1..4]
-
--- Stick a floating bubble into its proper place.
-stick :: Panel -> FloatingBubble -> Panel
-stick p fb = newpanel
- where cands = filter (overlapping used) $ search newchar (lowpt p) sz
-       used = map area (bubbles p) ++ characters p
-       (sz,newchar) = (dim fb, characterloc fb)
-       newbubble = Bubble { content = floatingspeech fb
-                          , anchor  = newchar
-			  , size    = sz
-			  , area    = head cands
-			  , seqnum  = bubbleorder fb }
-       newpanel = p { bubbles = newbubble : bubbles p
-                    , lowpt   = bottomright (area newbubble)
-		    }
-
 -- Mapping from co-ordinate to a sequence number.
 -- Use Nothing to represent an empty square.
 type Grid = [(Pt,Maybe FloatingBubble)]
+type SmallGrid = [(Pt,FloatingBubble)]
 type Env  = [Box]
 
--- Generate an empty grid, removing any candidate positions
--- that are inside character frames already.
+keepGood :: Grid -> SmallGrid
+keepGood = concatMap f
+  where f (_,Nothing) = []
+        f (a,Just fb) = [(a,fb)]
+
+-- Generate a grid of candidate locations, omitting
+-- any locations which overlap the known characters.
 blankGrid :: Panel -> Dim -> Grid
-blankGrid p (minwidth,minheight) = [((x,y),Nothing)
-                                   | y <- ys, x <- xs, valid (x,y)]
+blankGrid p (mw,mh) = [((cx,cy),Nothing)
+                      | cy <- cys, cx <- cxs, valid (cx,cy)]
   where (w,h) = dim p
-        xs = [minwidth,minwidth+minwidth..w]
-	ys = [minheight,minheight+minheight..h]
-	valid pt = overlapping (characters p) (Box pt pt) 
+        cxs = [mw,mw+mw..w]
+	cys = [mh,mh+mh..h]
+	valid pt = overlapping (characters p) (Box pt pt)
 
 fromGrid :: (Env,Grid) -> [Bubble]
-fromGrid (_,g) = map mkbubble filteredgrid
-  where filteredgrid = filter (isJust . snd) g
-	mkbubble (pt,Just fb) = Bubble { content = floatingspeech fb
-		                       , anchor  = characterloc fb
-				       , size    = dim fb
-				       , area    = conv pt (dim fb)
-				       , seqnum  = bubbleorder fb
-				       }
+fromGrid (_,g) = map mkbubble $ keepGood g
+  where mkbubble (pt,fb) = Bubble { content = floatingspeech fb
+		                  , anchor  = characterloc fb
+				  , size    = dim fb
+				  , area    = conv pt (dim fb)
+				  , seqnum  = bubbleorder fb
+				  }
 	conv (mx,my) (w,h) = Box (mx,my) (mx+w,my+h)
 
 -- Add all the bubbles spread evenly across the panel
@@ -188,37 +159,63 @@ initialGrid p fbs = (e,g)
 	incr = m`div`n
 	bubs = intercalate (replicate incr Nothing)
 	                       (map (return . Just) fbs)
-	g = zipWith (\a (b,c) -> (b,a)) bubs grid
+	g = zipWith (\a (b,_) -> (b,a)) bubs grid
 	e = characters p
 
 -- Determine some cost for this generated layout.
 cost :: (Env,Grid) -> Double
-cost st@(e,g) = disorderCost g + overlapCost st
+cost (e,g) = disorderCost g' + overlapCost e g' + attributionCost e g'
+  where g' = keepGood g
 
 -- Penalise solutions where the bubbles appear
 -- out of order for the x,y co-ordinates.
-disorderCost :: Grid -> Double
-disorderCost g = sum $ map f $ zip [1..] $ map bubbleorder $ catMaybes $ map snd sorted
-  where sorted = sortBy (comparing fst) $ filter (isJust . snd) g
-        f :: (Int,Int) -> Double
-	f (a,b) = fromIntegral $ abs (a - b)
+disorderCost :: SmallGrid -> Double
+disorderCost g = sum $ zipWith diff [1..] sorted
+  where sorted = map (bubbleorder . snd) $ sortBy (comparing fst) g
+
+        diff :: Int -> Int -> Double
+	diff a b = fromIntegral $ abs (a - b)
 
 -- Penalise solutions where bubbles overlap each
 -- other or the characters' faces.
-overlapCost :: (Env,Grid) -> Double
-overlapCost (e,g) = genericLength fbs - genericLength overlapfaces
-  where (pts,fbs) = unzip $ sortBy (comparing fst) $ filter (isJust . snd) g
-        mkbox (px,py) (w,h) = Box (px,py) (px+w,py+h)
-	candidates = zipWith mkbox pts $ map dim $ catMaybes fbs
-	freecandidates = nubBy overlaps candidates
-	overlapfaces = filter (overlapping e) freecandidates
+overlapCost :: Env -> SmallGrid -> Double
+overlapCost e g = fromIntegral $ overlapfaces + overlapother
+  where mkbox :: (Pt,FloatingBubble) -> Box
+        mkbox ((px,py),fb) = let (w,h) = dim fb in Box (px,py) (px+w,py+h)
+
+	boxes = map mkbox g
+
+        -- remove boxes which duplicate others
+	nodups = nubBy overlaps boxes
+	overlapother = 2 * (length boxes - length nodups)
+
+	-- remove boxes which overlap faces
+	freespace = filter (overlapping e) boxes
+	overlapfaces = (length boxes - length freespace)
+
+-- Penalise solutions where bubbles are further
+-- from the anchor than they are from another
+-- anchor point.
+attributionCost :: Env -> SmallGrid -> Double
+attributionCost e g = 0.5 * fromIntegral (length $ filter incorrect g)
+  where incorrect pfb = nearest pfb /= characterloc (snd pfb)
+
+        nearest :: (Pt,FloatingBubble) -> Box
+        nearest (pt,_) = minimumBy (comparing (dist pt)) e
+
+dist :: (IsFrame a) => Pt -> a -> Double
+dist (mx1,my1) pt2 = sqrt $ fromIntegral (xd*xd + yd*yd)
+  where (mx2,my2) = midpoint pt2
+	xd = (mx2 - mx1)
+	yd = (my2 - my1)
 
 -- Zip together two lists using 'f', but when
 -- the shorter of the two lists ends we transform
 -- the tail of the longer list using 'g' and tag
 -- it on the end.
-longZipWith f g [] bs = map g bs
-longZipWith f g as [] = map g as
+longZipWith :: (a -> a -> b) -> (a -> b) -> [a] -> [a] -> [b]
+longZipWith _ g [] bs = map g bs
+longZipWith _ g as [] = map g as
 longZipWith f g (a:as) (b:bs) = f a b : longZipWith f g as bs
 
 -- Take proportion r of the bubbles and swap their
