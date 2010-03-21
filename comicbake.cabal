@@ -22,4 +22,5 @@ executable comicbake
   ghc-options:         -Wall
   if flag(testing)
     ghc-options: -Werror
-  Build-Depends:       base,containers,split,tagsoup,parsec,filepath,gd,random
+  Build-Depends:       base,containers,split,tagsoup,parsec,filepath,
+                       random,gd-dougal
