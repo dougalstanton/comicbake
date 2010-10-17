@@ -49,7 +49,7 @@ Some tools to use along the way:
 
 *   parsec: defining script format, parsing
 *   tagsoup: HTML parsing
-*   gd: graphics backed
+*   gd: graphics backend
 
 These have some lower level dependencies but they shouldn't matter at
 this point.
