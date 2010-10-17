@@ -1,4 +1,7 @@
-module Script where
+module Script (Frame, Pt, Dim, Character,
+               IsFrame (..),
+               Box (..),
+               Script (..)) where
 
 import Control.Arrow ((***))
 
