@@ -7,7 +7,7 @@ import Data.Maybe
 import Data.List.Split (split, dropInitBlank, keepDelimsL, whenElt)
 import Data.List (mapAccumL)
 
-import Script (Script(..), Character, Frame)
+import Script
 
 data Scene = Scene
     { sceneNumber     :: Int
