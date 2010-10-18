@@ -12,7 +12,7 @@ import Sanitise
 -- stage.
 
 data Text = Bubble [String] Character deriving (Eq,Show)
-data Person = Person Character deriving (Eq,Show)
+data Person = Person {unperson :: Character} deriving (Eq,Show)
 data Objects = Objs [Text] [Person] deriving (Eq,Show)
 
 action2text :: Action -> Text
