@@ -69,6 +69,7 @@ with layout of paragraph bubbles and such.
     * ensure at least one bg image specified (first scene)
 3.  Parse image maps for each scene and annotate script syntax tree
     * ensure character with dialogue is visible in image
+    * annotate each speech with the location of its speaker
 4.  Lay out speech bubbles
     * leave room for characters
     * use proper left-to-right and top-to-bottom ordering
