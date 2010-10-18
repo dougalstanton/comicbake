@@ -7,6 +7,9 @@ data Pane a = Pane { number     :: Int
                    , action     :: a
                    }
 
+instance Functor Pane where
+ fmap f p = p { action = f (action p) }
+
 sanitiseScene :: Scene -> Pane [Action]
 sanitiseScene sc = Pane { number = sceneNumber sc
                         , background = sceneBackground sc
