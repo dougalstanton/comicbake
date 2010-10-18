@@ -18,7 +18,6 @@ data Scene = Scene
 data Action = Action
     { character :: Character
     , speech    :: [String]
-    , position  :: Maybe Frame
     } deriving (Eq, Show)
 
 parseScriptFromFile fp = parseScript fp `fmap` readFile fp
@@ -43,7 +42,7 @@ mkScene = foldr f z
   where z = Scene 0 "" []
         f (Start n url) s = s { sceneNumber = n, sceneBackground = url }
         f (Content c d) s = s { sceneAction = newAction c d s }
-        newAction c d s@(Scene _ _ a) = Action c d Nothing : a
+        newAction c d s@(Scene _ _ a) = Action c d : a
 
 problems :: [S] -> [String]
 problems ss = mapMaybe ($ss) ps
