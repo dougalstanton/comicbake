@@ -35,26 +35,32 @@ estimate str = (divrt2 w,h)
         divrt2 = round . (/sqrt 2) . fromIntegral
 
 -- Create radial arms made of candidate centre-points.
--- Various diagonals can be made by joining the two
--- other arms to take the average diagonal line.
-joinarms arm1 arm2 pt = zipWith f (arm1 pt) (arm2 pt)
-  where f (x1,y1) (x2,y2) = (x1+x2,y1+y2) 
 -- (0,0) is top left, x++ moves right, y++ moves down
-trail c f = iterate (c f)
-horiz :: (Int -> Int) -> Pt -> [Pt]
-horiz f = trail first f
-vertic :: (Int -> Int) -> Pt -> [Pt]
-vertic f = trail second f
+horiz :: Bool -> Pt -> [Pt]
+horiz left = iterate (first (if left then pred else succ))
+vertic :: Bool -> Pt -> [Pt]
+vertic up = iterate (second (if up then pred else succ))
+-- Diagonals use the vertical component from one arm and
+-- the horizontal component from the other arm.
+joinarms arm1 arm2 pt = zipWith f (arm1 pt) (arm2 pt)
+  where f (x,_) (_,y) = (x,y)
 
 -- We don't want to choose locations that are way off screen,
 -- but a little bit of overspill avoids the boxed-in feel.
 inbounds (w,h) (x,y) = x >= 0 && x < w && y >= 0 && y < h
 
--- Arms heading in the general direction of the centre
--- of the scene are probably aesthetically nicer (guesswork).
+-- Arms heading in the general direction of the centre of the
+-- scene are probably aesthetically nicer (guesswork). Arms at
+-- a diagonal are nicer than ones directly above/below/beside
+-- the speaker (guesswork).
 rankarms :: Dim -> Pt -> [Pt]
-rankarms sz@(pwidth,pheight) (x,y) = undefined
-  where (cx,cy) = (pwidth`div`2, pheight`div`2)
-        keep = takeWhile (inbounds sz)
-        --hdir = if cx > x then succ else pred
-        --vdir = if cy > y then succ else pred
+rankarms sz@(pw,ph) pt@(x,y) = concatMap keep candidates
+  where keep = takeWhile (inbounds sz)
+        hdir = x > (pw `div` 2) -- left?
+        vdir = y > (ph `div` 2) -- up?
+        diags = [ joinarms (horiz hdir)       (vertic vdir)
+                , joinarms (horiz hdir)       (vertic (not vdir))
+                , joinarms (horiz (not hdir)) (vertic vdir)
+                , joinarms (horiz (not hdir)) (vertic (not vdir))]
+        flats = [vertic vdir,horiz hdir,vertic (not vdir),horiz (not hdir)]
+        candidates = map ($pt) (diags ++ flats)
