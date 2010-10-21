@@ -1,9 +1,10 @@
 module Layout where
 
-import Control.Arrow (first,second)
+import Control.Arrow (first,second, (***))
 
 import Script
 import Locations
+import Geometry
 
 -- Given a list of texts associated with some location, we need
 -- to determine the size of the texts by some mechanism and pin
@@ -29,9 +30,10 @@ import Locations
 -- Guess how much space a speech bubble will take up by counting
 -- number of lines, and characters per line. Divide the width by
 -- sqrt 2 (guesswork) because many characters are not full width.
+-- Assume a 20px character size.
 estimate str = (divrt2 w,h)
-  where w = fromIntegral $ maximum $ map length str
-        h = length str
+  where w = 20 * (maximum $ map length str)
+        h = 20 * length str
         divrt2 = round . (/sqrt 2) . fromIntegral
 
 -- Create radial arms made of candidate centre-points.
@@ -52,15 +54,17 @@ inbounds (w,h) (x,y) = x >= 0 && x < w && y >= 0 && y < h
 -- Arms heading in the general direction of the centre of the
 -- scene are probably aesthetically nicer (guesswork). Arms at
 -- a diagonal are nicer than ones directly above/below/beside
--- the speaker (guesswork).
-rankarms :: Dim -> Pt -> [Pt]
-rankarms sz@(pw,ph) pt@(x,y) = concatMap keep candidates
+-- the speaker (guesswork). We will omit arms facing directly
+-- away from the conversation because they're never worth it
+-- (more guesswork).
+type Arm = [Pt]
+rankarms :: Dim -> Pt -> [Arm]
+rankarms sz@(pw,ph) pt@(x,y) = map keep candidates
   where keep = takeWhile (inbounds sz)
         hdir = x > (pw `div` 2) -- left?
         vdir = y > (ph `div` 2) -- up?
         diags = [ joinarms (horiz hdir)       (vertic vdir)
                 , joinarms (horiz hdir)       (vertic (not vdir))
-                , joinarms (horiz (not hdir)) (vertic vdir)
-                , joinarms (horiz (not hdir)) (vertic (not vdir))]
-        flats = [vertic vdir,horiz hdir,vertic (not vdir),horiz (not hdir)]
+                , joinarms (horiz (not hdir)) (vertic vdir)]
+        flats = [vertic vdir, horiz hdir, vertic (not vdir)]
         candidates = map ($pt) (diags ++ flats)
