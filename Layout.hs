@@ -68,3 +68,59 @@ rankarms sz@(pw,ph) pt@(x,y) = map keep candidates
                 , joinarms (horiz (not hdir)) (vertic vdir)]
         flats = [vertic vdir, horiz hdir, vertic (not vdir)]
         candidates = map ($pt) (diags ++ flats)
+
+-- Process the text bubbles, testing each candidate location for
+-- suitability and discarding the undesirable ones. There will
+-- inevitably be tradeoffs where an ideal set of positions is not
+-- easy to determine. Removing poorer choices incrementally might
+-- help to clarify the issue.
+
+-- A point is unsuitable if the resulting box would overlap any
+-- known boxes (typically, characters).
+alreadyused :: [Box] -> [String] -> Pt -> Bool
+alreadyused occupied txt (x,y) = any (overlaps txtbox) occupied
+  where txtbox = Box (x-w, y-h) (x+w, y+h)
+        (w,h) = half *** half $ estimate txt
+        half = flip div 2
+
+-- A point is unsuitable if it appears "before" (in traditional
+-- comic reading order) another point which is already fixed.
+outoforder :: [Pt] -> Pt -> Bool
+outoforder previous this = any (`after` this) previous
+  where after (x1,y1) (x2,y2) = y2 < y1 || x2 < x1
+
+-- Given an arm we move along its length until we find a position
+-- that isn't *un*suitable and stop there, but we keep hold of
+-- the unexplored regions in case they are needed.
+-- If we can't find a suitable candidate then we return Nothing
+-- and hope that other elements can be moved around to make room
+-- for this one (ie backtracking).
+findcandidate :: [Box] -> [String] -> [Pt] -> [Arm] -> Maybe (Pt,[Arm])
+findcandidate _ _ _ [] = Nothing
+findcandidate boxs txt prev (arm:arms) =
+  case dropWhile unsuitable arm of
+       []     -> findcandidate boxs txt prev arms
+       [c]    -> Just (c,arms)
+       (c:cs) -> Just (c,cs:arms)
+  where unsuitable pt = alreadyused boxs txt pt || outoforder prev pt
+
+type Path = ([String],[Arm])
+
+-- Depth first search to find the first acceptable list of
+-- locations for all text elements.
+dfs :: [Box] -> [Path] -> [Path] -> [Pt] -> [Pt]
+dfs _    []   _    done = done
+dfs boxs todo alts done =
+  let (txt,arms):rest = todo
+  in case findcandidate boxs txt done arms of
+       Just (pt,remains) -> dfs boxs rest ((txt,remains):alts) (pt:done)
+       Nothing -> if null done || null alts -- should be same thing
+                  then error "Layout:dfs couldn't place anything"
+                  else dfs boxs ((head alts):todo) (tail alts) (tail done)
+
+candidates :: [Box] -> [Path] -> [Pt]
+candidates occupied potentials = dfs occupied potentials [] []
+
+mkpaths :: Dim -> [[String]] -> [Pt] -> [Path]
+mkpaths sz txts speakers = map mkpath (zip txts speakers)
+ where mkpath (txt,speaker) = (txt,rankarms sz speaker)
