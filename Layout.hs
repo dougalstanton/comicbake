@@ -57,6 +57,9 @@ inbounds (w,h) (x,y) = x >= 0 && x < w && y >= 0 && y < h
 -- the speaker (guesswork). We will omit arms facing directly
 -- away from the conversation because they're never worth it
 -- (more guesswork).
+-- TODO: Change arm order to top-bottom for vertical component
+-- of diagonals. Conversations should favour starting higher
+-- and moving down later.
 type Arm = [Pt]
 rankarms :: Dim -> Pt -> [Arm]
 rankarms sz@(pw,ph) pt@(x,y) = map keep candidates
