@@ -1,19 +1,21 @@
-module Sanitise (Pane(..), sanitiseScene) where
+module Sanitise (Panel(..), sanitiseScene) where
 
 import Script
 import Parse
 
-data Pane a = Pane { number     :: Int
-                   , background :: FilePath
-                   , bgsize     :: Maybe Dim
-                   , action     :: a
-                   }
+data Panel a = Panel
+    { number     :: Int
+    , background :: FilePath
+    , bgsize     :: Maybe Dim
+    , action     :: a
+    }
 
-instance Functor Pane where
+instance Functor Panel where
  fmap f p = p { action = f (action p) }
 
-sanitiseScene :: Scene -> Pane [Action]
-sanitiseScene sc = Pane { number = sceneNumber sc
-                        , background = sceneBackground sc
-                        , bgsize = Nothing
-                        , action = sceneAction sc }
+sanitiseScene :: Scene -> Panel [Action]
+sanitiseScene sc = Panel
+    { number = sceneNumber sc
+    , background = sceneBackground sc
+    , bgsize = Nothing
+    , action = sceneAction sc }
