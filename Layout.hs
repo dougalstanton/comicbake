@@ -124,6 +124,28 @@ dfs boxs todo alts done =
 candidates :: [Box] -> [Path] -> [Pt]
 candidates occupied potentials = dfs occupied potentials [] []
 
-mkpaths :: Dim -> [[String]] -> [Pt] -> [Path]
+mkpaths :: Dim -> [[String]] -> [Box] -> [Path]
 mkpaths sz txts speakers = map mkpath (zip txts speakers)
- where mkpath (txt,speaker) = (txt,rankarms sz speaker)
+ where mkpath (txt,speaker) = (txt,rankarms sz (midpoint speaker))
+
+-- A single speech item is the text with its location attached
+-- to a speaker, with their location.
+type FixedText = Located [String]
+data Speech = Speech FixedText FixedPerson deriving (Eq,Show)
+
+locatetext :: [String] -> Pt -> FixedText
+locatetext txt (x,y) = Loc (Box (x - w', y - h') (x + w', y + h')) txt
+  where (w,h) = estimate txt
+        w' = w `div` 2
+        h' = h `div` 2
+
+-- Given the size of the background image and a list of texts with
+-- known speaker locations, we return a list which identifies the
+-- locations of speakers and their speeches.
+fixspeeches :: Dim -> [AttributedText] -> [Speech]
+fixspeeches sz attribtexts = zipWith Speech fixedtexts fixedpersons
+  where positions = reverse $ candidates occupied $ mkpaths sz txts occupied
+        fixedtexts = zipWith locatetext txts positions
+        (txts,fixedpersons) = unzip $ map unattrib attribtexts
+        occupied = map (\(Loc position _) -> position) fixedpersons
+        unattrib (AttrBubble s fp) = (s,fp)
