@@ -74,3 +74,11 @@ thoughtbubble strs pt dst img = do
   blobtail dims pt dst img
   text "Sans" strs pt img
   return ()
+
+-- Create a speech bubble with a tail pointing at the speaker.
+speechbubble strs pt dst img = do
+  dims <- text "Sans" strs pt img
+  rect dims pt img
+  -- TODO: add in tail pointing at speaker
+  text "Sans" strs pt img
+  return ()
