@@ -1,10 +1,23 @@
 module Pix where
 
+import Control.Monad
+import Graphics.GD
+import System.FilePath
+
 import Script
-import qualified Layout as L (Bubble(..))
-import Layout (Panel(..))
+import Sanitise
+import Locations
+import Layout
+import Drawing
 
-data Pix = Pix
+addspeech img (Speech (Loc txtbox txt) (Loc speakerbox _)) = do
+  speechbubble txt (midpoint txtbox) (midpoint speakerbox) img
+  return img
 
-panel2pix :: Panel -> Pix
-panel2pix panel = Pix
+writeImage :: FilePath -> FilePath -> Panel [Speech] -> IO (Panel FilePath)
+writeImage directory prefix panel = do
+  img <- loadPngFile (background panel)
+  foldM addspeech img (action panel)
+  let outputfile = directory </> prefix <.> show (number panel) <.> "png"
+  savePngFile outputfile img
+  return (panel {action = outputfile })
