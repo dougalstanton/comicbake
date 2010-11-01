@@ -76,7 +76,7 @@ with layout of paragraph bubbles and such.
     * apply heuristics for elegant layout
 5.  Generate output images
 6.  Create final comic
-    * stich images together
+    * stitch images together
     * create animation (animgif style)
 
 Obviously step 4 will include a lot of magic and guesswork.
