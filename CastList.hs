@@ -1,6 +1,7 @@
 module CastList (CastList, addCharacter, getCoords, emptyCast) where
 
 import qualified Data.Map as M
+import qualified Data.Char as C
 
 type Character = String
 type Coordinate = (Int, Int)
@@ -18,7 +19,8 @@ addCharacter ch coords list | validInput = ImageMap $ M.insert ch coords $ image
         where validInput = validCharacter ch && validCoords coords
 
 getCoords :: Character -> CastList -> Maybe [Coordinate]
-getCoords character = M.lookup character . imageMap
+getCoords char = M.lookup character . imageMap
+  where character = map C.toLower char
 
 validCharacter = not . null
 validCoords = even . length
