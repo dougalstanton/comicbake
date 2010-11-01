@@ -6,6 +6,9 @@ import Graphics.GD
 -- comic features --- speech bubbles, bordered frames,
 -- description boxes and so on.
 
+-- Constants
+fontsize = 10
+
 -- Common colours.
 white = rgb 255 255 255
 black = rgb 0 0 0
@@ -43,12 +46,12 @@ text name strs (x,y) = \img -> do
   -- drawString takes the lower-left co-ordinate of the first letter
   -- as its starting point. Can you believe this nonsense?
   -- Anyway, we have to add the height of the first line back on.
-  firstline <- measureString name 12 0 (x,y) (head strs) black
-  bounds <- measureString name 12 0 (x,y) str black
+  firstline <- measureString name fontsize 0 (x,y) (head strs) black
+  bounds <- measureString name fontsize 0 (x,y) str black
   let (_,fontheight) = boundsize firstline
       (w,h) = boundsize bounds
       pt = (x - half w, fontheight + y - half h)
-  drawString name 12 0 pt str black img
+  drawString name fontsize 0 pt str black img
   return (w,h)
 
 -- Draw a tail which curves from the start point in the general
