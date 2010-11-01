@@ -70,6 +70,7 @@ blobtail (width,height) (sx,sy) (dx,dy) img =
 
 -- Create a thought bubble with a trail of smaller bubbles.
 thoughtbubble strs pt dst img = do
+  useFontConfig True
   -- We need to scale the bubbles around the text, so first
   -- find out how large the text will be.
   dims <- text "Sans" strs pt img
@@ -80,6 +81,7 @@ thoughtbubble strs pt dst img = do
 
 -- Create a speech bubble with a tail pointing at the speaker.
 speechbubble strs pt dst img = do
+  useFontConfig True
   dims <- text "Sans" strs pt img
   rect dims pt img
   -- TODO: add in tail pointing at speaker
