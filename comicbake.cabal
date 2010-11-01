@@ -1,9 +1,8 @@
 Name:                comicbake
 Version:             0.0
 Stability:           experimental
-Description:         Compiler for generating web comics from image
-                     templates and simple scripts describing the drama.
-Synopsis:            Compiler for creating web comics
+Description:         Generate web comics from images and scripts.
+Synopsis:            Turn scripts into comics!
 License:             GPL
 Extra-source-files:  README,NOTES
 Author:              Dougal Stanton
@@ -17,10 +16,10 @@ flag testing
   default: False
 
 executable comicbake
-  main-is:	     Compiler.hs
+  main-is:	     Main.hs
 
   ghc-options:         -Wall
   if flag(testing)
     ghc-options: -Werror
   Build-Depends:       base,containers,split,tagsoup,parsec,filepath,
-                       random,gd
+                       random,gd,hsmagick,cmdargs,directory

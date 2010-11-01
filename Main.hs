@@ -1,4 +1,4 @@
-module ComicBake where
+module Main where
 
 import Control.Monad (when,(=<<))
 
