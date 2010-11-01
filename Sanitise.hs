@@ -8,7 +8,7 @@ data Panel a = Panel
     , background :: FilePath
     , bgsize     :: Maybe Dim
     , action     :: a
-    }
+    } deriving Show
 
 instance Functor Panel where
  fmap f p = p { action = f (action p) }
