@@ -23,7 +23,7 @@ defOptions = Opts
     &= help "Script to convert"
   }
   &= program "comicbake"
-  &= summary "ComicBake v0.0, (c) Dougal Stanton 2010"
+  &= summary "ComicBake v0.1, (c) Dougal Stanton 2010"
   &= help "Convert text scripts into web comics"
 
 processArgs = cmdArgs defOptions

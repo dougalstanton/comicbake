@@ -1,5 +1,5 @@
 Name:                comicbake
-Version:             0.0
+Version:             0.1
 Stability:           experimental
 Description:         Generate web comics from images and scripts.
 Synopsis:            Turn scripts into comics!
