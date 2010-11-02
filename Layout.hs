@@ -28,13 +28,13 @@ import Geometry
 -- than arms away from the conversation.
 
 -- Guess how much space a speech bubble will take up by counting
--- number of lines, and characters per line. Divide the width by
--- sqrt 2 (guesswork) because many characters are not full width.
--- Assume a 20px character size.
-estimate str = (divrt2 w,h)
+-- number of lines, and characters per line. Multiply the width by
+-- somewhere between 0.4 and 0.5 because that seems to be the right
+-- ratio from some experiments.
+estimate str = (scale w,h)
   where w = 20 * (maximum $ map length str)
         h = 20 * length str
-        divrt2 = round . (/sqrt 2) . fromIntegral
+        scale = round . (* 0.4) . fromIntegral
 
 -- Create radial arms made of candidate centre-points.
 -- (0,0) is top left, x++ moves right, y++ moves down
@@ -47,9 +47,16 @@ vertic up = iterate (second (if up then pred else succ))
 joinarms arm1 arm2 pt = zipWith f (arm1 pt) (arm2 pt)
   where f (x,_) (_,y) = (x,y)
 
--- We don't want to choose locations that are way off screen,
--- but a little bit of overspill avoids the boxed-in feel.
-inbounds (w,h) (x,y) = x >= 0 && x < w && y >= 0 && y < h
+-- Only consider points that are within the bounds of the original image.
+inbounds (w,h) (x,y) = x >= 0 && x <= w && y >= 0 && y <= h
+
+-- Sometimes it looks nice if a bubble spills over the edge a bit but
+-- we don't want it to disappear completely.
+-- TODO: Fine-tune how much margin we want to allow.
+onscreen :: Dim -> [String] -> Pt -> Bool
+onscreen (w,h) txt pt = go (-20,-20) (w+20,h+20) (txt2box pt txt)
+  where go (left,top) (right,bottom) (Box (xl,yt) (xr,yb)) =
+           and $ [xl>=left,yt>=top,xr<=right,yb<=bottom]
 
 -- Arms heading in the general direction of the centre of the
 -- scene are probably aesthetically nicer (guesswork). Arms at
@@ -61,9 +68,9 @@ inbounds (w,h) (x,y) = x >= 0 && x < w && y >= 0 && y < h
 -- of diagonals. Conversations should favour starting higher
 -- and moving down later.
 type Arm = [Pt]
-rankarms :: Dim -> Pt -> [Arm]
-rankarms sz@(pw,ph) pt@(x,y) = map keep candidates
-  where keep = takeWhile (inbounds sz)
+rankarms :: [String] -> Dim -> Pt -> [Arm]
+rankarms txt sz@(pw,ph) pt@(x,y) = map keep candidates
+  where keep = filter (onscreen sz txt) . takeWhile (inbounds sz)
         hdir = x > (pw `div` 2) -- left?
         vdir = y > (ph `div` 2) -- up?
         diags = [ joinarms (horiz hdir)       (vertic vdir)
@@ -78,19 +85,23 @@ rankarms sz@(pw,ph) pt@(x,y) = map keep candidates
 -- easy to determine. Removing poorer choices incrementally might
 -- help to clarify the issue.
 
+txt2box (x,y) txt = Box (x-w, y-h) (x+w, y+h)
+  where (w,h) = half *** half $ estimate txt
+        half = flip div 2
+
 -- A point is unsuitable if the resulting box would overlap any
 -- known boxes (typically, characters).
 alreadyused :: [Box] -> [String] -> Pt -> Bool
-alreadyused occupied txt (x,y) = any (overlaps txtbox) occupied
-  where txtbox = Box (x-w, y-h) (x+w, y+h)
-        (w,h) = half *** half $ estimate txt
-        half = flip div 2
+alreadyused occupied txt pt = any (overlaps txtbox) occupied
+  where txtbox = txt2box pt txt
 
 -- A point is unsuitable if it appears "before" (in traditional
 -- comic reading order) another point which is already fixed.
+-- TODO: Use bounding boxes instead of centre points. Upper bound
+-- should be below the lowest bound of all previous points.
 outoforder :: [Pt] -> Pt -> Bool
-outoforder previous this = any (`after` this) previous
-  where after (x1,y1) (x2,y2) = y2 < y1 || x2 < x1
+outoforder previous this = any (this `before`) previous
+  where before (x1,y1) (x2,y2) = y1 < y2 || abs (y2 - y1) < 20
 
 -- Given an arm we move along its length until we find a position
 -- that isn't *un*suitable and stop there, but we keep hold of
@@ -126,7 +137,7 @@ candidates occupied potentials = dfs occupied potentials [] []
 
 mkpaths :: Dim -> [[String]] -> [Box] -> [Path]
 mkpaths sz txts speakers = map mkpath (zip txts speakers)
- where mkpath (txt,speaker) = (txt,rankarms sz (midpoint speaker))
+ where mkpath (txt,speaker) = (txt,rankarms txt sz (midpoint speaker))
 
 -- A single speech item is the text with its location attached
 -- to a speaker, with their location.
