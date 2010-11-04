@@ -5,7 +5,6 @@ import Graphics.GD
 import System.FilePath
 
 import Script
-import Sanitise
 import Locations
 import Layout
 import Drawing

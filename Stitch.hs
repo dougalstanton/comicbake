@@ -4,7 +4,6 @@ import Graphics.Transform.Magick.Images
 import Graphics.Transform.Magick.Types
 
 import Script
-import Sanitise
 
 -- Join all the panels together and write them out to
 -- a single file.

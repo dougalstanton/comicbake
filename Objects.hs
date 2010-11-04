@@ -4,7 +4,6 @@ import Data.List
 
 import Script
 import Parse
-import Sanitise
 
 -- Collect all the individual objects which are mentioned in the
 -- script but don't assign them any location yet. They are like

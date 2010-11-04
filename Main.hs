@@ -12,7 +12,6 @@ import Transform
 import Pix
 import Stitch
 
-import Sanitise -- Panel
 import Script -- Script
 import Layout -- Speech
 
@@ -40,7 +39,7 @@ validateFile filename = do
 
 -- Transform script by bringing together the cast list with
 -- character locations and choosing where to place speech bubbles.
-genPanels :: Script [Scene] -> IO (Script [Panel [Speech]])
+genPanels :: Script [Panel [Action]] -> IO (Script [Panel [Speech]])
 genPanels script = do
   let ctxdir = takeDirectory $ scriptLocation script
   panels <- mapM (processScene ctxdir) $ scriptContents script

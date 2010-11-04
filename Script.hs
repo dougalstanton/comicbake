@@ -1,7 +1,8 @@
 module Script (Frame, Pt, Dim, Character,
                IsFrame (..),
                Box (..),
-               Script (..)) where
+               Script (..),
+               Panel (..)) where
 
 import Control.Arrow ((***))
 
@@ -32,6 +33,10 @@ instance IsFrame Box where
 instance Ord Box where
  b1 < b2 = topleft b1 < topleft b2
 
+-- The grand-daddy of the containers in this program.
+-- Everything is stored in the script once it's parsed,
+-- and transformations are done on the contents until the
+-- final panels are boiled down to one image and written.
 data Script a = Script
     { scriptTitle    :: String
     , scriptCredits  :: [String]
@@ -42,3 +47,15 @@ data Script a = Script
 instance Functor Script where
     fmap f script = script { scriptContents = f (scriptContents script) }
 
+-- A script contains a number of panels representing the
+-- "scenes", which carry their own metadata as well as the
+-- current state of the panels contents.
+data Panel a = Panel
+    { number     :: Int
+    , background :: FilePath
+    , bgsize     :: Maybe Dim
+    , action     :: a
+    } deriving Show
+
+instance Functor Panel where
+ fmap f p = p { action = f (action p) }

@@ -7,17 +7,15 @@ import Graphics.GD
 
 import Script
 import Parse
-import Sanitise
 import Objects
 import Locations
 import Layout
 import CastList
 import ImageMapParse
 
-processScene :: FilePath -> Scene -> IO (Panel [Speech])
-processScene dir scene = do
-  let panelobjs = fmap gatherobjects $ sanitiseScene scene
-  panelattrtext <- loadCastList dir panelobjs
+processScene :: FilePath -> Panel [Action] -> IO (Panel [Speech])
+processScene dir panel = do
+  panelattrtext <- loadCastList dir $ fmap gatherobjects panel
   bgImageSize dir panelattrtext
 
 -- Load and parse the cast list from the .map file.

@@ -7,7 +7,8 @@ import Data.Maybe
 import Data.List.Split (split, dropInitBlank, keepDelimsL, whenElt)
 import Data.List (mapAccumL)
 
-import Script
+import Script hiding (Panel(..))
+import qualified Script as S
 
 data Scene = Scene
     { sceneNumber     :: Int
@@ -22,7 +23,7 @@ data Action = Action
 
 parseScriptFromFile fp = parseScript fp `fmap` readFile fp
 
-parseScript :: FilePath -> String -> Either String (Script [Scene])
+parseScript :: FilePath -> String -> Either String (Script [S.Panel [Action]])
 parseScript fp str = if null errs
                      then Right $ convert fp $ fromOk res
                      else Left $ unlines errs
@@ -31,8 +32,15 @@ parseScript fp str = if null errs
         errs = either (map messageString . errorMessages) problems res
         fromOk (Right a) = a
 
-convert :: FilePath -> [S] -> Script [Scene]
-convert fp ss = Script t [a,d] fp (map mkScene scenes)
+sanitiseScene :: Scene -> S.Panel [Action]
+sanitiseScene sc = S.Panel
+    { S.number = sceneNumber sc
+    , S.background = sceneBackground sc
+    , S.bgsize = Nothing
+    , S.action = sceneAction sc }
+
+convert :: FilePath -> [S] -> Script [S.Panel [Action]]
+convert fp ss = Script t [a,d] fp (map (sanitiseScene . mkScene) scenes)
  where (Preamble t s d a ms) = head ss
        scenes = splitRun isStart $ tail ss
        splitRun p = split (dropInitBlank $ keepDelimsL $ whenElt p)
