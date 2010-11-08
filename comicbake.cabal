@@ -4,7 +4,7 @@ Stability:           experimental
 Description:         Generate web comics from images and scripts.
 Synopsis:            Turn scripts into comics!
 License:             GPL
-Extra-source-files:  README
+Extra-source-files:  README,TODO
 Author:              Dougal Stanton
 Maintainer:          dougal@dougalstanton.net
 Category:            Graphics
