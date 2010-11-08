@@ -1,0 +1,22 @@
+Script format
+*   Parser needs rewritten.
+*   Tag "thinking" text as different from normal speech.
+*   Force all text/speech on new line after directions.
+
+Bubble placement
+*   Use estimated box size instead of centre point to avoid overlaps.
+*   Look again at order of arms when choosing candidate locations.
+
+Individual panel graphics
+*   Shrink text a bit.
+*   Rounded rectangles for speech bubbles. Can be done with two overlapping rectangles, one full height and the other full width, with arcs/circles in the corners.
+*   Tails on speech bubbles.
+*   Thought bubbles.
+
+Final comic
+*   Episodes name, series, author attached to resulting file. Can be attached as separate strip along top/bottom of final image.
+*   Allow choice of horizontal or gridded comics too.
+*   Replace stitching with flickbook animation.
+
+Future plans
+*   Publishing: WP, flickr?
