@@ -19,4 +19,5 @@ Final comic
 *   Replace stitching with flickbook animation.
 
 Future plans
-*   Publishing: WP, flickr?
+*   Publish comics with one command.
+    * Upload to Flickr: http://hackage.haskell.org/package/flickr
