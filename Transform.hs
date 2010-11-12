@@ -6,12 +6,12 @@ import System.FilePath
 import Graphics.GD
 
 import Script
-import Parse
+import Parsing.ScriptParse
+import Parsing.ImageMapParse
 import Objects
 import Locations
 import Layout
 import CastList
-import ImageMapParse
 
 processScene :: FilePath -> Panel [Action] -> IO (Panel [Speech])
 processScene dir panel = do

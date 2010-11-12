@@ -1,5 +1,6 @@
-module Parse (Scene (..), Action (..),
-              parseScript, parseScriptFromFile) where
+module Parsing.ScriptParse
+       (Scene (..), Action (..)
+       ,parseScript, parseScriptFromFile) where
 
 import Text.ParserCombinators.Parsec hiding (space, spaces)
 import Text.ParserCombinators.Parsec.Error

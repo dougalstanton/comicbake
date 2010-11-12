@@ -1,4 +1,4 @@
-module ImageMapParse (parseImageMap) where
+module Parsing.ImageMapParse (parseImageMap) where
 
 import Text.HTML.TagSoup
 

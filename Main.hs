@@ -7,7 +7,7 @@ import System.Directory
 import System.Exit
 
 import CmdArgs
-import Parse
+import Parsing.ScriptParse
 import Transform
 import Pix
 import Stitch
