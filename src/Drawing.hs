@@ -39,14 +39,30 @@ oval sz pt = \img -> do
 -- Draw a box with border around this point
 frame :: Size -> Point -> Image -> IO ()
 frame (w,h) pt = \img -> do
-  rect (w+2,h+2) pt grey img
-  rect (w,h) pt white img
+  roundrect (w+2,h+2) pt grey img
+  roundrect (w,h) pt white img
 
 -- Draw rectangle of the given width and height centred on (x,y)
 rect :: Size -> Point -> Color -> Image -> IO ()
 rect (w,h) (x,y) colour = drawFilledRectangle pt1 pt2 colour
   where pt1 = (x - half w, y - half h)
         pt2 = (x + half w, y + half h)
+
+-- Draw rectangle of given width and height with rounded corners.
+-- Calculate the corner radius by taking the smallest of w/3 and
+-- h/3, assuming this is larger than the fontsize.
+roundrect :: Size -> Point -> Color -> Image -> IO ()
+roundrect (w,h) (x,y) colour = \img -> do
+  drawFilledRectangle (x1,y2) (x4,y3) colour img -- full width
+  drawFilledRectangle (x2,y1) (x3,y4) colour img -- full height
+  drawFilledEllipse (x2,y2) sz colour img
+  drawFilledEllipse (x2,y3) sz colour img
+  drawFilledEllipse (x3,y2) sz colour img
+  drawFilledEllipse (x3,y3) sz colour img
+    where r = max (min (w`div`3) (h`div`3)) (round fontsize)
+          sz = (r*2,r*2)
+          (x1,x2,x3,x4) = (x-half w,x1+r,x4-r,x+half w)
+          (y1,y2,y3,y4) = (y-half h,y1+r,y4-r,y+half h)
 
 -- Very handy for debugging on the final image.
 dotR,dotB :: Point -> Image -> IO ()

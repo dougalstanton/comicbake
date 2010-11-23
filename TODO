@@ -9,7 +9,6 @@ Bubble placement
 
 Individual panel graphics
 *   Shrink text a bit.
-*   Rounded rectangles for speech bubbles. Can be done with two overlapping rectangles, one full height and the other full width, with arcs/circles in the corners.
 *   Tails on speech bubbles.
 *   Thought bubbles.
 
