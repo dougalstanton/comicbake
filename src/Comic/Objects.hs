@@ -1,4 +1,4 @@
-module Objects where
+module Comic.Objects where
 
 import Data.List
 

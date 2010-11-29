@@ -1,9 +1,9 @@
-module Layout where
+module Comic.Layout where
 
 import Control.Arrow (first,second, (***))
 
 import Script
-import Locations
+import Comic.Locations
 import Geometry
 
 -- Given a list of texts associated with some location, we need

@@ -1,7 +1,7 @@
-module Locations where
+module Comic.Locations where
 
 import Script
-import Objects
+import Comic.Objects
 import CastList
 
 -- Bring together the character names and their locations

@@ -5,8 +5,8 @@ import Graphics.GD
 import System.FilePath
 
 import Script
-import Locations
-import Layout
+import Comic.Locations
+import Comic.Layout
 import Drawing
 
 addspeech off img (Speech (Loc txtbox txt) (Loc speakerbox _)) = do

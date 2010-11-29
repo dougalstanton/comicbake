@@ -8,12 +8,12 @@ import System.Exit
 
 import CmdArgs
 import Parsing.ScriptParse
-import Transform
+import Comic.Transform
 import Pix
 import Stitch
 
 import Script -- Script
-import Layout -- Speech
+import Comic.Layout -- Speech
 
 
 main = do

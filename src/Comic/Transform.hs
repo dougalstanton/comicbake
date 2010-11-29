@@ -1,4 +1,4 @@
-module Transform where
+module Comic.Transform where
 
 import Control.Monad
 
@@ -8,9 +8,9 @@ import Graphics.GD
 import Script
 import Parsing.ScriptParse
 import Parsing.ImageMapParse
-import Objects
-import Locations
-import Layout
+import Comic.Objects
+import Comic.Locations
+import Comic.Layout
 import CastList
 
 processScene :: FilePath -> Panel [Action] -> IO (Panel [Speech])
