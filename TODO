@@ -4,11 +4,11 @@ Script format
 *   Force all text/speech on new line after directions.
 
 Bubble placement
-*   Use estimated box size instead of centre point to avoid overlaps.
 *   Look again at order of arms when choosing candidate locations.
 
 Individual panel graphics
 *   Shrink text a bit.
+*   Text is too near top of bubble, especially visible with small bubbles.
 *   Tails on speech bubbles.
 *   Thought bubbles.
 
