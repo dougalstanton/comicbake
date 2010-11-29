@@ -13,7 +13,12 @@ import CastList
 
 type FixedPerson = Located Person
 
-data Located a = Loc Box a deriving (Eq,Show)
+data Located a = Loc { location :: Box
+                     , item     :: a } deriving (Eq,Show)
+
+instance IsFrame (Located a) where
+  dim (Loc box _) = dim box
+  coords (Loc box _) = coords box
 
 -- Cast lists are stored with lists of coordinates
 coords2box [first,second] = Box first second
