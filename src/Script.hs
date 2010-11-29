@@ -31,7 +31,13 @@ instance IsFrame Box where
              (x2,y2) = bottomright b
 	 in (x2-x1, y2-y1)
 instance Ord Box where
- b1 < b2 = topleft b1 < topleft b2
+ compare (Box (ax1,ay1) (ax2,ay2))
+         (Box (bx1,by1) (bx2,by2))
+            | ay2 < by1 = LT
+            | ay1 > by2 = GT
+            -- | ax1 > bx2 = compare ay1 by1
+            -- | ax2 < bx1 = compare ay2 by2
+            | otherwise = EQ
 
 -- The grand-daddy of the containers in this program.
 -- Everything is stored in the script once it's parsed,
