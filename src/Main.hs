@@ -9,33 +9,62 @@ import System.Exit
 import CmdArgs
 import Parsing.ScriptParse
 import Comic.Transform
+import Publish.Flickr
 import Pix
 import Stitch
 
 import Script -- Script
 import Comic.Layout -- Speech
 
-
+main :: IO ()
 main = do
   opts <- processArgs
+  case opts of
+    Publish _ _ _ _ _ _ -> publishComic opts
+    Build _ _ _ _       -> buildComic opts
+
+buildComic :: InputOptions -> IO ()
+buildComic opts = do
   when (null $ input opts) badFilename
 
   okFile <- validateFile (input opts)
-  when (not okFile) unreadableFile
+  when (not okFile) $ unreadableFile (input opts)
 
   loaded <- parseScriptFromFile (input opts)
   case loaded of
     Left err -> failWith err
     Right s  -> joinPanels opts =<< writePanels opts =<< genPanels s
   where badFilename = failWith "Please provide an input (script) file"
-        unreadableFile = failWith "File not found or unreadable"
 
+publishComic :: InputOptions -> IO ()
+publishComic opts = do
+  let login = enableFlickr opts
+      logout = disableFlickr opts
+  when (login && logout)
+    (failWith "Can't use enableFlickr and disableFlickr together.")
+  when login (flickrLogin >> exitSuccess)
+  when logout (flickrLogout >> exitSuccess)
+
+  okFile <- validateFile (comicstrip opts)
+  when (not okFile) $ unreadableFile (comicstrip opts)
+  let ul = ULData { ulFile = comicstrip opts
+                  , ulTitle = title opts
+                  , ulDesc  = description opts
+                  , ulTags  = tags opts
+                  }
+  murl <- flickrUpload ul
+  putStrLn $ maybe "Image could not be published."
+                   ("Image successfully uploaded to:\n" ++) murl
+
+-- Error messages and quick exit on failure.
 failWith msg = putStrLn msg >> exitFailure
+unreadableFile f = failWith $ "File "++ show f ++" not found or unreadable"
 
+validateFile :: FilePath -> IO Bool
 validateFile filename = do
   exists <- doesFileExist filename
-  readable <- readable `fmap` getPermissions filename
-  return (exists && readable)
+  isreadable <- readable `fmap` getPermissions filename
+  return (exists && isreadable)
 
 -- Transform script by bringing together the cast list with
 -- character locations and choosing where to place speech bubbles.

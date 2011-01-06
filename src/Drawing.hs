@@ -7,7 +7,7 @@ import Graphics.GD
 -- description boxes and so on.
 
 -- Constants
-fontsize = 10
+fontsize = 9
 
 -- Common colours.
 white = rgb 255 255 255

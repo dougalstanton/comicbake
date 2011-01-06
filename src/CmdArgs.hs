@@ -3,16 +3,22 @@ module CmdArgs (InputOptions(..), processArgs) where
 
 import System.Console.CmdArgs
 
-data InputOptions = Opts
-  { output :: FilePath
-  , outdir :: FilePath
-  , tmpdir :: FilePath
-  , input  :: FilePath
-  } deriving (Eq,Show,Data,Typeable)
+data InputOptions
+  = Build { output :: FilePath
+          , outdir :: FilePath
+          , tmpdir :: FilePath
+          , input  :: FilePath }
+  | Publish { comicstrip    :: FilePath
+            , title         :: Maybe String
+            , description   :: Maybe String
+            , tags          :: [String]
+            , enableFlickr  :: Bool
+            , disableFlickr :: Bool}
+  deriving (Eq,Show,Data,Typeable)
 
 defOutFile = "comicstrip"
 
-defOptions = Opts
+buildOpts = Build
   { outdir = "." &= typDir
     &= help "Output directory (default: current directory)"
   , tmpdir = "." &= typDir
@@ -21,9 +27,25 @@ defOptions = Opts
     &= help ("Name of output file (default: " ++ defOutFile ++ ")")
   , input  = def &= typFile
     &= help "Script to convert"
+  } &= help "Build a comic strip from a script"
+
+publishOpts = Publish
+  { comicstrip = (defOutFile ++ ".png") &= typFile
+    &= help "Path to comic strip image"
+  , title = def &= typ "TITLE"
+    &= help "Comic strip title"
+  , description = def &= typ "DESC"
+    &= help "Description of this comic"
+  , tags = def &= typ "TAG1,TAG2,.."
+    &= help "Tags to annotate this comic"
+  , enableFlickr = False &= help "Enable Flickr without uploading anything"
+  , disableFlickr = False &= help "Disable Flickr"
   }
+  &= help "Upload a comic strip"
+
+options = modes [buildOpts &= auto, publishOpts]
   &= program "comicbake"
   &= summary "ComicBake v0.1, (c) Dougal Stanton 2010"
   &= help "Convert text scripts into web comics"
 
-processArgs = cmdArgs defOptions
+processArgs = cmdArgs options
