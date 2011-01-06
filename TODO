@@ -7,7 +7,6 @@ Bubble placement
 *   Look again at order of arms when choosing candidate locations.
 
 Individual panel graphics
-*   Shrink text a bit.
 *   Text is too near top of bubble, especially visible with small bubbles.
 *   Tails on speech bubbles.
 *   Thought bubbles.
@@ -18,5 +17,3 @@ Final comic
 *   Replace stitching with flickbook animation.
 
 Future plans
-*   Publish comics with one command.
-    * Upload to Flickr: http://hackage.haskell.org/package/flickr
