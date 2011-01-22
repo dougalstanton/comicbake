@@ -45,7 +45,7 @@ publishOpts = Publish
 
 options = modes [buildOpts &= auto, publishOpts]
   &= program "comicbake"
-  &= summary "ComicBake v0.1, (c) Dougal Stanton 2010"
+  &= summary "ComicBake v0.2, (c) Dougal Stanton 2010-11"
   &= help "Convert text scripts into web comics"
 
 processArgs = cmdArgs options
