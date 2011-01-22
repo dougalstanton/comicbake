@@ -22,19 +22,23 @@ The script includes the path to the images, and image maps are assumed to be sim
 
 Invoke ComicBake like this:
 
-    $ comicbake --input scripts/waiting.script
+    $ comicbake build --input scripts/waiting.script
 
 It will write out `comicstrip.png` (the final image) and a `comicstrip.N.png` panel file for each scene that comprises your final image. These are essentially temporary files so you can store them elsewhere:
 
-    $ comicbake --input scripts/waiting.script --tmpdir tmp/
+    $ comicbake build --input scripts/waiting.script --tmpdir tmp/
 
 If you want the output image to go somewhere different use this:
 
-    $ comicbake --input scripts/waiting.script --outdir ~/comics/
+    $ comicbake build --input scripts/waiting.script --outdir ~/comics/
 
 The root name of the output file can be changed from the default _comicstrip_ to something more descriptive. Note that the ".png" extension is added.
 
-    $ comicbake --input scripts/waiting.script --outdir ~/comics/ -o waitingforgodot
+    $ comicbake build --input scripts/waiting.script --outdir ~/comics/ -o waitingforgodot
+
+If you've got a Flickr account you can upload a comic with (optionally) a descriptive name, explanatory text and tags. The first time you upload something you'll have to authorise the program but it will happen automatically after that.
+
+    $ comicbake publish --comic ~/comics/waitingforgodot.png --title "Waiting for Godot" --description "Based on the play by Samuel Beckett" --tags pretentious,"samuel beckett",godot
 
 Use `comicbake --help` as a reminder.
 
