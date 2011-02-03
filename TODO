@@ -1,6 +1,4 @@
 Script format
-*   Parser needs rewritten.
-*   Tag "thinking" text as different from normal speech.
 *   Force all text/speech on new line after directions.
 
 Bubble placement
@@ -15,5 +13,8 @@ Final comic
 *   Episodes name, series, author attached to resulting file. Can be attached as separate strip along top/bottom of final image.
 *   Allow choice of horizontal or gridded comics too.
 *   Replace stitching with flickbook animation.
+
+Uploading
+*   Flickr upload still chokes on some inputs: title? description? sth else?
 
 Future plans
