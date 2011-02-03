@@ -44,7 +44,16 @@ Use `comicbake --help` as a reminder.
 
 ## Writing a script
 
-The script is a simple text file which contains a preamble and a number of scenes. I recommend you look at the contents of `examples/` to see what is possible. The scenes take the following general format:
+The script is a simple text file which contains a preamble and a number of scenes. I recommend you look at the contents of `examples/` to see what is possible.
+
+The preamble is any number of comment lines (prefixed with "--") or blank lines. Comments can contain metadata in a "key: value" format, such as setting the title of the comic:
+
+    -- title: Waiting for Godot
+    -- Based on the play by Samuel Beckett.
+
+Keys which the program does not recognised are ignored, as are ordinary comment lines, so you're basically free to write what you want here.
+
+The scenes take the following general format:
 
     Scene N. <images/countryroad.png>
 
