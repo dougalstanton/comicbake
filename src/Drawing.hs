@@ -77,11 +77,11 @@ text name strs (x,y) = \img -> do
   -- as its starting point. Can you believe this nonsense?
   -- Anyway, we have to add the height of the first line back on.
   firstline <- measureString name fontsize 0 (x,y) (head strs) black
-  bounds <- measureString name fontsize 0 (x,y) str black
+  bounds    <- measureString name fontsize 0 (x,y) str black
   let (_,fontheight) = boundsize firstline
-      (w,h) = boundsize bounds
-      fudge = scale (*0.7) fontheight
-      pt = (x - half w, fudge + y - half h)
+      (w,h)          = boundsize bounds
+      fudgeY         = scale (*0.8) fontheight
+      pt             = (x - half w, fudgeY + y - half h)
   drawString name fontsize 0 pt str black img
   return (w,h)
 
