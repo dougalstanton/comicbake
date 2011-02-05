@@ -35,11 +35,11 @@ To log in again the user will have to re-authorise.
 -}
 
 import Control.Monad (when)
-import Data.Maybe (isNothing)
+import Data.Maybe (isNothing, fromMaybe)
 import Data.List (nub)
 
 import Flickr.API
-import Flickr.Photos (addTags, getInfo, getPhotoURL)
+import Flickr.Photos (addTags, getInfo, getPhotoURL, setMeta)
 import Flickr.Photos.Upload (uploadPhoto, nullUploadAttr)
 import Util.Authenticate
 import Util.Keys
@@ -148,16 +148,19 @@ data UploadData = ULData
   , ulTags  :: [Tag]
   } deriving Show
 
--- Photo upload fails with non-empty tags list. Workaround is
--- to add tags as separate action.
+-- Upload fails if metadata is supplied inline, so we
+-- add it separately once the upload is complete.
 sendphoto :: UploadData -> FM URLString
 sendphoto ul = do
   liftIO $ putStrLn "Trying to upload image..."
-  pid <- uploadPhoto (ulFile ul) (ulTitle ul) (ulDesc ul) [] flickr_attrs
+  pid <- uploadPhoto (ulFile ul) Nothing Nothing [] flickr_attrs
   addTags pid tags
+  setMeta title description pid
   info <- getInfo pid Nothing
   return (getPhotoURL info)
   where tags = nub $ flickr_tags ++ ulTags ul
+        title = fromMaybe "Unknown comic" (ulTitle ul)
+        description = fromMaybe "" (ulDesc ul)
 
 upload :: UploadData -> FM (Maybe URLString)
 upload uldata = do
