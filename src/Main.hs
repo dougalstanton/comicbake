@@ -10,8 +10,8 @@ import CmdArgs
 import Parsing.ScriptParse
 import Comic.Transform
 import Publish.Flickr
-import Pix
-import Stitch
+import Graphics.Pix
+import Graphics.Stitch
 
 import Script -- Script
 import Comic.Layout -- Speech

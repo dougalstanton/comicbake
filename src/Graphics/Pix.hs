@@ -1,4 +1,4 @@
-module Pix where
+module Graphics.Pix where
 
 import Control.Monad
 import Graphics.GD
@@ -7,7 +7,7 @@ import System.FilePath
 import Script
 import Comic.Locations
 import Comic.Layout
-import Drawing
+import Graphics.Drawing
 
 -- Write speech to the image, using the given offset to account
 -- for extra margine being added to the image since the speech

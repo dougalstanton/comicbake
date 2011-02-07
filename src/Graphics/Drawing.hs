@@ -1,4 +1,4 @@
-module Drawing where
+module Graphics.Drawing where
 
 import Graphics.GD
 

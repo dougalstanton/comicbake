@@ -1,4 +1,4 @@
-module Geometry where
+module Comic.Geometry where
 
 import Script
 

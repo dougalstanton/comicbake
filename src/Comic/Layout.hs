@@ -4,7 +4,7 @@ import Control.Arrow (first,second, (***))
 
 import Script
 import Comic.Locations
-import Geometry
+import Comic.Geometry
 
 -- Given a list of texts associated with some location, we need
 -- to determine the size of the texts by some mechanism and pin

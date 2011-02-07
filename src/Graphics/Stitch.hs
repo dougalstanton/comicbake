@@ -1,4 +1,4 @@
-module Stitch (writeComic) where
+module Graphics.Stitch (writeComic) where
 
 import Graphics.Transform.Magick.Images
 import Graphics.Transform.Magick.Types
