@@ -9,6 +9,10 @@ import Comic.Locations
 import Comic.Layout
 import Drawing
 
+-- Write speech to the image, using the given offset to account
+-- for extra margine being added to the image since the speech
+-- location was calculated.
+addspeech :: Int -> Image -> Speech -> IO Image
 addspeech off img (Speech (Loc txtbox txt) (Loc speakerbox _)) = do
   speechbubble txt (off += midpoint txtbox) (off += midpoint speakerbox) img
   return img
@@ -22,6 +26,8 @@ writeImage srcdir destdir filename panel = do
   savePngFile imgfile img
   return (panel {action = imgfile})
 
+-- Return an image which contains the original surrounded by
+-- a black margin (equal size on all sides).
 expandImage :: Image -> IO Image
 expandImage src = do
   (width,height) <- imageSize src
