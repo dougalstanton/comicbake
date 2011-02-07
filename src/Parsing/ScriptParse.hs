@@ -1,5 +1,5 @@
 module Parsing.ScriptParse
-       (Scene (..), Action (..)
+       (Action (..)
        ,parseScript, parseScriptFromFile) where
 
 import Control.Arrow (left)
