@@ -5,7 +5,6 @@ Bubble placement
 *   Look again at order of arms when choosing candidate locations.
 
 Individual panel graphics
-*   Text is too near top of bubble, especially visible with small bubbles.
 *   Tails on speech bubbles.
 *   Thought bubbles.
 
@@ -14,7 +13,5 @@ Final comic
 *   Allow choice of horizontal or gridded comics too.
 *   Replace stitching with flickbook animation.
 
-Uploading
-*   Flickr upload still chokes on some inputs: title? description? sth else?
-
 Future plans
+*   Named anchors ("bottom left", "top") instead of characters.
