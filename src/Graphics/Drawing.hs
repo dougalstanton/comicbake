@@ -8,6 +8,7 @@ import Graphics.GD
 
 -- Constants
 fontsize = 9
+fontname = "Sans"
 
 -- Common colours.
 white = rgb 255 255 255
@@ -69,20 +70,23 @@ dotR,dotB :: Point -> Image -> IO ()
 dotR (x,y) = drawFilledRectangle (x,y) (succ x,succ y) (rgb 255 0 0)
 dotB (x,y) = drawFilledRectangle (x,y) (succ x,succ y) (rgb 0 0 255)
 
+
+bubbleText :: [String] -> Point -> Image -> IO Point
+bubbleText = textRaw black fontname fontsize
+
 -- Draw the supplied string list centred on this position.
-text :: String -> [String] -> Point -> Image -> IO Point
-text name strs (x,y) = \img -> do
+textRaw colour name size strs (x,y) = \img -> do
   let str = init $ unlines strs -- drop that last \n
   -- drawString takes the lower-left co-ordinate of the first letter
   -- as its starting point. Can you believe this nonsense?
   -- Anyway, we have to add the height of the first line back on.
-  firstline <- measureString name fontsize 0 (x,y) (head strs) black
-  bounds    <- measureString name fontsize 0 (x,y) str black
+  firstline <- measureString name size 0 (x,y) (head strs) black
+  bounds    <- measureString name size 0 (x,y) str black
   let (_,fontheight) = boundsize firstline
       (w,h)          = boundsize bounds
       fudgeY         = scale (*0.8) fontheight
       pt             = (x - half w, fudgeY + y - half h)
-  drawString name fontsize 0 pt str black img
+  drawString name size 0 pt str colour img
   return (w,h)
 
 -- Draw a tail which curves from the start point in the general
@@ -107,18 +111,18 @@ thoughtbubble strs pt dst img = do
   useFontConfig True
   -- We need to scale the bubbles around the text, so first
   -- find out how large the text will be.
-  dims <- text "Sans" strs pt img
+  dims <- bubbleText strs pt img
   oval dims pt img
   blobtail dims pt dst img
-  text "Sans" strs pt img
+  bubbleText strs pt img
   return ()
 
 -- Create a speech bubble with a tail pointing at the speaker.
 speechbubble :: [String] -> Point -> Point -> Image -> IO ()
 speechbubble strs pt dst img = do
   useFontConfig True
-  dims <- text "Sans" strs pt img
+  dims <- bubbleText strs pt img
   frame (scaleXY 1.2 1.5 dims) pt img
   -- TODO: add in tail pointing at speaker
-  text "Sans" strs pt img
+  bubbleText strs pt img
   return ()
