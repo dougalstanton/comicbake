@@ -37,19 +37,19 @@ parseScript fp str = left show $ runParser scriptParser emptyState fp str
 
 
 scriptParser :: ScriptParser (Script [Panel [Action]])
-scriptParser = do bare   <- preambleParser
+scriptParser = do info   <- preambleParser
                   scenes <- manyTill sceneParser eof
-                  return $ bare { scriptContents = scenes }
+                  fname  <- (sourceName . statePos) `fmap` getParserState
+                  return $ Script info fname scenes
 
-preambleParser :: ScriptParser (Script [Panel [Action]])
+preambleParser :: ScriptParser Info
 preambleParser = do metadata <- catMaybes `fmap` many comment
                     let info = Info { title  = fetch "title" metadata
                                     , author = fetch "author" metadata
                                     , date = "", description = ""
                                     , credits = [], tags = [] }
-                    file <- (sourceName . statePos) `fmap` getParserState
                     many (space <|> newline)
-                    return $ Script info file []
+                    return info
     where fetch key = fromMaybe ("Unknown "++key) . lookup key
 
 sceneParser :: ScriptParser (Panel [Action])
