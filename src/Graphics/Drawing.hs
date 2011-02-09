@@ -74,6 +74,12 @@ dotB (x,y) = drawFilledRectangle (x,y) (succ x,succ y) (rgb 0 0 255)
 bubbleText :: [String] -> Point -> Image -> IO Point
 bubbleText = textRaw black fontname fontsize
 
+titleText :: String -> Point -> Image -> IO Point
+titleText = textRaw white fontname (fontsize + 2) . (:[])
+
+authorText :: String -> Point -> Image -> IO Point
+authorText = textRaw white fontname (fontsize - 2) . (:[])
+
 -- Draw the supplied string list centred on this position.
 textRaw colour name size strs (x,y) = \img -> do
   let str = init $ unlines strs -- drop that last \n
@@ -126,3 +132,13 @@ speechbubble strs pt dst img = do
   -- TODO: add in tail pointing at speaker
   bubbleText strs pt img
   return ()
+
+header, footer :: String -> Image -> IO Size
+header title = \img -> do
+  useFontConfig True
+  dims <- imageSize img
+  titleText title (pair half dims) img
+footer author = \img -> do
+  useFontConfig True
+  dims <- imageSize img
+  authorText author (pair half dims) img

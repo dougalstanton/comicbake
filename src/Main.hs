@@ -79,9 +79,16 @@ genPanels script = do
 writePanels :: InputOptions -> Script [Panel [Speech]] -> IO (Script [Panel FilePath])
 writePanels opts script = do
   panelfiles <- mapM writeTempImage (scriptContents script)
-  return $ script {scriptContents = panelfiles}
+  let imgwidth = maximum $ map (maybe (error "Unknown size!") fst . bgsize) panelfiles
+  headerfile <- writeHeader (scriptTitle script) imgwidth (tmpdir opts) (output opts)
+  footerfile <- writeFooter author imgwidth (tmpdir opts) (output opts)
+  let h = Panel 0 "" Nothing headerfile
+      f = Panel 0 "" Nothing footerfile
+      allfiles = [h] ++ panelfiles ++ [f]
+  return $ script {scriptContents = allfiles}
   where writeTempImage = writeImage srcdir (tmpdir opts) (output opts)
         srcdir = takeDirectory $ scriptLocation script
+        author = if null (scriptCredits script) then "" else head (scriptCredits script)
 
 -- If we have more than one image we need to stitch them together.
 joinPanels :: InputOptions -> Script [Panel FilePath] -> IO ()

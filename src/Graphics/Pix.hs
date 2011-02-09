@@ -24,7 +24,8 @@ writeImage srcdir destdir filename panel = do
   foldM (addspeech 10) img (action panel)
   let imgfile = destdir </> filename <.> show (number panel) <.> "png"
   savePngFile imgfile img
-  return (panel {action = imgfile})
+  newsize <- imageSize img
+  return (panel {bgsize = Just newsize, action = imgfile})
 
 -- Return an image which contains the original surrounded by
 -- a black margin (equal size on all sides).
@@ -35,3 +36,14 @@ expandImage src = do
   fillImage (rgb 0 0 0) dst
   copyRegion (0,0) (width,height) src (10,10) dst
   return dst
+
+writeHeader = writeBookend header "head"
+writeFooter = writeBookend footer "foot"
+
+writeBookend writer role txt width destdir filename = do
+  img <- newImage (width,30)
+  fillImage (rgb 0 0 0) img
+  let imgfile = destdir </> filename <.> role <.> "png"
+  writer txt img
+  savePngFile imgfile img
+  return imgfile
