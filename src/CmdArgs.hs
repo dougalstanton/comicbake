@@ -9,9 +9,9 @@ data InputOptions
           , tmpdir :: FilePath
           , input  :: FilePath }
   | Publish { comicstrip    :: FilePath
-            , title         :: Maybe String
-            , description   :: Maybe String
-            , tags          :: [String]
+            , cli_title     :: Maybe String
+            , cli_desc      :: Maybe String
+            , cli_tags      :: [String]
             , enableFlickr  :: Bool
             , disableFlickr :: Bool}
   deriving (Eq,Show,Data,Typeable)
@@ -32,11 +32,11 @@ buildOpts = Build
 publishOpts = Publish
   { comicstrip = (defOutFile ++ ".png") &= typFile
     &= help "Path to comic strip image"
-  , title = def &= typ "TITLE"
+  , cli_title = def &= typ "TITLE"
     &= help "Comic strip title"
-  , description = def &= typ "DESC"
+  , cli_desc = def &= typ "DESC"
     &= help "Description of this comic"
-  , tags = def &= typ "TAG1,TAG2,.."
+  , cli_tags = def &= typ "TAG1,TAG2,.."
     &= help "Tags to annotate this comic"
   , enableFlickr = False &= help "Enable Flickr without uploading anything"
   , disableFlickr = False &= help "Disable Flickr"

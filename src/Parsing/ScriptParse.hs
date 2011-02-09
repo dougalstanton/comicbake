@@ -43,11 +43,13 @@ scriptParser = do bare   <- preambleParser
 
 preambleParser :: ScriptParser (Script [Panel [Action]])
 preambleParser = do metadata <- catMaybes `fmap` many comment
-                    let title  = fetch "title" metadata
-                        author = fetch "author" metadata
+                    let info = Info { title  = fetch "title" metadata
+                                    , author = fetch "author" metadata
+                                    , date = "", description = ""
+                                    , credits = [], tags = [] }
                     file <- (sourceName . statePos) `fmap` getParserState
                     many (space <|> newline)
-                    return $ Script title [author] file []
+                    return $ Script info file []
     where fetch key = fromMaybe ("Unknown "++key) . lookup key
 
 sceneParser :: ScriptParser (Panel [Action])

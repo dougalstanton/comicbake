@@ -1,8 +1,4 @@
-module Script (Frame, Pt, Dim, Character,
-               IsFrame (..),
-               Box (..),
-               Script (..),
-               Panel (..)) where
+module Script where
 
 import Control.Arrow ((***))
 
@@ -39,13 +35,23 @@ instance Ord Box where
             -- | ax2 < bx1 = compare ay2 by2
             | otherwise = EQ
 
+-- Metadata which we use when writing the comic header/footer
+-- and when uploading. Some of these can be empty but it doesn't
+-- really matter if they are, so option types are unnecessary.
+data Info = Info
+    { title       :: String
+    , author      :: String
+    , date        :: String
+    , description :: String
+    , credits     :: [String]
+    , tags        :: [String]
+    } deriving (Eq,Show)
 -- The grand-daddy of the containers in this program.
 -- Everything is stored in the script once it's parsed,
 -- and transformations are done on the contents until the
 -- final panels are boiled down to one image and written.
 data Script a = Script
-    { scriptTitle    :: String
-    , scriptCredits  :: [String]
+    { scriptInfo     :: Info
     , scriptLocation :: FilePath
     , scriptContents :: a
     } deriving (Eq, Show)

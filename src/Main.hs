@@ -2,6 +2,8 @@ module Main where
 
 import Control.Monad (when,(=<<))
 
+import Data.Maybe (fromMaybe)
+
 import System.FilePath
 import System.Directory
 import System.Exit
@@ -47,12 +49,12 @@ publishComic opts = do
 
   okFile <- validateFile (comicstrip opts)
   when (not okFile) $ unreadableFile (comicstrip opts)
-  let ul = ULData { ulFile = comicstrip opts
-                  , ulTitle = title opts
-                  , ulDesc  = description opts
-                  , ulTags  = tags opts
+  let info = Info { title = fromMaybe "Unknown comic" $ cli_title opts
+                  , description = fromMaybe "" $ cli_desc opts
+                  , author = "", date = "", credits = []
+                  , tags = cli_tags opts
                   }
-  murl <- flickrUpload ul
+  murl <- flickrUpload $ ULData (comicstrip opts) info
   putStrLn $ maybe "Image could not be published."
                    ("Image successfully uploaded to:\n" ++) murl
 
@@ -80,15 +82,14 @@ writePanels :: InputOptions -> Script [Panel [Speech]] -> IO (Script [Panel File
 writePanels opts script = do
   panelfiles <- mapM writeTempImage (scriptContents script)
   let imgwidth = maximum $ map (maybe (error "Unknown size!") fst . bgsize) panelfiles
-  headerfile <- writeHeader (scriptTitle script) imgwidth (tmpdir opts) (output opts)
-  footerfile <- writeFooter author imgwidth (tmpdir opts) (output opts)
+  headerfile <- writeHeader (title $ scriptInfo script) imgwidth (tmpdir opts) (output opts)
+  footerfile <- writeFooter (author $ scriptInfo script) imgwidth (tmpdir opts) (output opts)
   let h = Panel 0 "" Nothing headerfile
       f = Panel 0 "" Nothing footerfile
       allfiles = [h] ++ panelfiles ++ [f]
   return $ script {scriptContents = allfiles}
   where writeTempImage = writeImage srcdir (tmpdir opts) (output opts)
         srcdir = takeDirectory $ scriptLocation script
-        author = if null (scriptCredits script) then "" else head (scriptCredits script)
 
 -- If we have more than one image we need to stitch them together.
 joinPanels :: InputOptions -> Script [Panel FilePath] -> IO ()

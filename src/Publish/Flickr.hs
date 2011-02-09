@@ -48,6 +48,8 @@ import System.Directory
 import System.IO
 import System.FilePath
 
+import Script
+
 -- Upload the file with title, description and tags provided.
 -- Returns remote URL of image if uploaded.
 flickrUpload :: UploadData -> IO (Maybe URLString)
@@ -143,9 +145,7 @@ connect = do
 
 data UploadData = ULData
   { ulFile  :: FilePath
-  , ulTitle :: Maybe String
-  , ulDesc  :: Maybe String
-  , ulTags  :: [Tag]
+  , ulInfo  :: Info
   } deriving Show
 
 -- Upload fails if metadata is supplied inline, so we
@@ -154,13 +154,13 @@ sendphoto :: UploadData -> FM URLString
 sendphoto ul = do
   liftIO $ putStrLn "Trying to upload image..."
   pid <- uploadPhoto (ulFile ul) Nothing Nothing [] flickr_attrs
-  addTags pid tags
-  setMeta title description pid
+  addTags pid upload_tags
+  setMeta upload_title upload_desc pid
   info <- getInfo pid Nothing
   return (getPhotoURL info)
-  where tags = nub $ flickr_tags ++ ulTags ul
-        title = fromMaybe "Unknown comic" (ulTitle ul)
-        description = fromMaybe "" (ulDesc ul)
+  where upload_tags = nub $ flickr_tags ++ tags (ulInfo ul)
+        upload_title = title (ulInfo ul)
+        upload_desc = description (ulInfo ul)
 
 upload :: UploadData -> FM (Maybe URLString)
 upload uldata = do
