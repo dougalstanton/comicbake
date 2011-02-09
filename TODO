@@ -1,5 +1,6 @@
 Script format
-*   Force all text/speech on new line after directions.
+*   Force all text/speech on new line after directions?
+*   Leave key/value result as a dictionary
 
 Bubble placement
 *   Look again at order of arms when choosing candidate locations.
@@ -9,6 +10,7 @@ Individual panel graphics
 *   Thought bubbles.
 
 Final comic
+*   Gather metadata in custom structure incorporating script and cli input.
 *   Episodes name, series, author attached to resulting file. Can be attached as separate strip along top/bottom of final image.
 *   Allow choice of horizontal or gridded comics too.
 *   Replace stitching with flickbook animation.
