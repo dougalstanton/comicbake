@@ -107,8 +107,9 @@ filename = between (char '<') (char '>') (many (noneOf "\n\r>"))
 comment :: ScriptParser (Maybe (String,String))
 comment = do delimiter
              mkv <- optionMaybe (try keyvalue)
-             optional (manyTill anyChar newline)
-             many newline
+             if isNothing mkv
+                then manyTill anyChar newline >> many newline
+                else many newline
              return mkv
   where delimiter = string "--" >> spaces
 
