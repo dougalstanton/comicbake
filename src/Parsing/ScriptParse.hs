@@ -16,9 +16,8 @@ data Action = Action
     , speech    :: [String]
     } deriving (Eq, Show)
 
-data ComicState = S { savedUrl :: Maybe FilePath }
-emptyState = S Nothing
-saveUrl url = updateState (\s -> s {savedUrl = url})
+type ComicState = Maybe FilePath
+saveUrl = updateState . const
 
 ifIndented yes no = do pos <- getPosition
                        if (sourceColumn pos > 1) then yes else no
@@ -29,7 +28,7 @@ parseScriptFromFile :: FilePath -> IO (Either String (Script [Panel [Action]]))
 parseScriptFromFile fp = parseScript fp `fmap` readFile fp
 
 parseScript :: FilePath -> String -> Either String (Script [Panel [Action]])
-parseScript fp str = left show $ runParser scriptParser emptyState fp str
+parseScript fp str = left show $ runParser scriptParser Nothing fp str
 
 --
 -- Below here is the base level parser using Parsec.
@@ -64,7 +63,7 @@ sceneHeaderParser = do sceneKeyword >> spaces
                        url <- urlParser <?> "path to background image"
                        many (space <|> newline)
                        return (read num, url)
-    where urlParser = do oldUrl <- savedUrl `fmap` getState
+    where urlParser = do oldUrl <- getState
                          newUrl <- optionMaybe filename
                          let url = newUrl `mplus` oldUrl
                          maybe pzero (\u -> saveUrl url >> return u) url
