@@ -1,6 +1,6 @@
 module Main where
 
-import Control.Monad (when,(=<<))
+import Control.Monad (when)
 
 import Data.Maybe (fromMaybe)
 
