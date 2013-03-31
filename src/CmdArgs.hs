@@ -1,51 +1,69 @@
-{-# LANGUAGE DeriveDataTypeable #-}
-module CmdArgs (InputOptions(..), processArgs) where
+module CmdArgs ( execParser, options
+               , Modes(..), Build(..), Publish(..)) where
 
-import System.Console.CmdArgs
+import Options.Applicative
 
-data InputOptions
-  = Build { output :: FilePath
-          , outdir :: FilePath
-          , tmpdir :: FilePath
-          , input  :: FilePath }
-  | Publish { comicstrip    :: FilePath
-            , cli_title     :: Maybe String
-            , cli_desc      :: Maybe String
-            , cli_tags      :: [String]
-            , enableFlickr  :: Bool
-            , disableFlickr :: Bool}
-  deriving (Eq,Show,Data,Typeable)
+data Build = Build
+           { output :: FilePath
+           , outdir :: FilePath
+           , tmpdir :: FilePath
+           , input  :: FilePath
+           } deriving Show
 
-defOutFile = "comicstrip"
+build :: Parser Build
+build = Build
+    <$> strOption
+        (long "output" <> short 'o'
+        <> value "strip" <> metavar "FILE"
+        <> help "Output comic to FILE.png")
+    <*> strOption
+        (long "dir" <> short 'd'
+        <> value "." <> help "Path to save output comic file")
+    <*> strOption
+        (long "tmpdir" <> short 't'
+        <> value "." <> help "Path to save intermediate files")
+    <*> argument str (metavar "SCRIPT")
 
-buildOpts = Build
-  { outdir = "." &= typDir
-    &= help "Output directory (default: current directory)"
-  , tmpdir = "." &= typDir
-    &= help "Temp data directory (default: current directory)"
-  , output = defOutFile &= name "o" &= typFile
-    &= help ("Name of output file (default: " ++ defOutFile ++ ")")
-  , input  = def &= typFile
-    &= help "Script to convert"
-  } &= help "Build a comic strip from a script"
+data Publish = Publish
+             { cli_title     :: Maybe String
+             , cli_desc      :: Maybe String
+             , cli_tags      :: [String]
+             , enableFlickr  :: Bool
+             , disableFlickr :: Bool
+             , comicstrip    :: FilePath
+             } deriving Show
 
-publishOpts = Publish
-  { comicstrip = (defOutFile ++ ".png") &= typFile
-    &= help "Path to comic strip image"
-  , cli_title = def &= typ "TITLE"
-    &= help "Comic strip title"
-  , cli_desc = def &= typ "DESC"
-    &= help "Description of this comic"
-  , cli_tags = def &= typ "TAG1,TAG2,.."
-    &= help "Tags to annotate this comic"
-  , enableFlickr = False &= help "Enable Flickr without uploading anything"
-  , disableFlickr = False &= help "Disable Flickr"
-  }
-  &= help "Upload a comic strip"
+-- cheap and cheerful, doesn't deal with escaped commas
+commalist = return . words . map (\c -> if c==',' then ' ' else c)
 
-options = modes [buildOpts &= auto, publishOpts]
-  &= program "comicbake"
-  &= summary "ComicBake v0.2, (c) Dougal Stanton 2010-11"
-  &= help "Convert text scripts into web comics"
+publish :: Parser Publish
+publish = Publish
+      <$> optional (strOption (long "title"))
+      <*> optional (strOption (long "description"))
+      <*> nullOption (long "tags" <> help "Comma-delimited list"
+                                <> reader commalist <> value [])
+      <*> switch (long "enableFlickr" <> help "Enable without uploading")
+      <*> switch (long "disableFlckr" <> help "Force disable Flickr")
+      <*> argument str (metavar "PATH")
 
-processArgs = cmdArgs options
+
+data Modes = MkComic Build | UploadComic Publish
+             deriving Show
+
+modes :: Parser Modes
+modes = subparser
+          (command "build"
+                   (info (helper <*> buildmode)
+                         (progDesc "Generate a comic!"))
+        <> command "publish"
+                   (info (helper <*> uploadmode)
+                                   (progDesc "Upload a comic!")))
+  where buildmode = MkComic <$> build
+        uploadmode = UploadComic <$> publish
+
+options = info (helper <*> modes)
+               ( fullDesc
+               <> progDesc "Convert text scripts into web comics"
+               <> header "ComicBake v0.2, (c) Dougal Stanton 2010-11"
+               <> footer "Pass --help to a subcommand for more details.")
+

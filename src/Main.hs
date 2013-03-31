@@ -19,13 +19,11 @@ import Script -- Script
 import Comic.Layout -- Speech
 
 main :: IO ()
-main = do
-  opts <- processArgs
-  case opts of
-    Publish _ _ _ _ _ _ -> publishComic opts
-    Build _ _ _ _       -> buildComic opts
+main = execParser options >>= go
+  where go (UploadComic comic) = publishComic comic
+        go (MkComic    script) = buildComic script
 
-buildComic :: InputOptions -> IO ()
+buildComic :: Build -> IO ()
 buildComic opts = do
   when (null $ input opts) badFilename
 
@@ -38,7 +36,7 @@ buildComic opts = do
     Right s  -> joinPanels opts =<< writePanels opts =<< genPanels s
   where badFilename = failWith "Please provide an input (script) file"
 
-publishComic :: InputOptions -> IO ()
+publishComic :: Publish -> IO ()
 publishComic opts = do
   let login = enableFlickr opts
       logout = disableFlickr opts
@@ -78,7 +76,7 @@ genPanels script = do
 
 -- Write temporary images, one for each panel, which will be
 -- stitched together in the next stage.
-writePanels :: InputOptions -> Script [Panel [Speech]] -> IO (Script [Panel FilePath])
+writePanels :: Build -> Script [Panel [Speech]] -> IO (Script [Panel FilePath])
 writePanels opts script = do
   panelfiles <- mapM writeTempImage (scriptContents script)
   let imgwidth = maximum $ map (maybe (error "Unknown size!") fst . bgsize) panelfiles
@@ -92,7 +90,7 @@ writePanels opts script = do
         srcdir = takeDirectory $ scriptLocation script
 
 -- If we have more than one image we need to stitch them together.
-joinPanels :: InputOptions -> Script [Panel FilePath] -> IO ()
+joinPanels :: Build -> Script [Panel FilePath] -> IO ()
 joinPanels opts script =
   case panels of
     []      -> failWith "No comic panels to write"
