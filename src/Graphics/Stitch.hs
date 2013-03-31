@@ -1,7 +1,7 @@
 module Graphics.Stitch (writeComic) where
 
-import Graphics.Transform.Magick.Images
-import Graphics.Transform.Magick.Types
+import Filesystem.Path.CurrentOS hiding (FilePath)
+import Graphics.ImageMagick.MagickWand
 
 import Script
 
@@ -13,9 +13,13 @@ import Script
 writeComic :: FilePath -> Script [Panel FilePath] -> IO ()
 writeComic outputfile script = do
   let panels = scriptContents script
-      orientation = TopToBottom
-  joinComics orientation (map action panels) outputfile
+      vertical = True
+  joinComics vertical (map action panels) outputfile
 
-joinComics orientation srcs dst = do
-  imgs <- mapM readImage srcs
-  writeImage dst (appendImages orientation imgs)
+joinComics orientation srcs dst = withMagickWandGenesis $ do
+  (_,w) <- magickWand
+  resetIterator w
+  mapM_ (readImage w . decodeString) srcs
+  resetIterator w
+  (_, result) <- (appendImages w orientation)
+  writeImage result $ Just $ decodeString dst
