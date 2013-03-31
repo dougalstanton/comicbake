@@ -1,3 +1,4 @@
+{-# LANGUAGE DeriveFunctor #-}
 module Script where
 
 import Control.Arrow ((***))
@@ -54,10 +55,7 @@ data Script a = Script
     { scriptInfo     :: Info
     , scriptLocation :: FilePath
     , scriptContents :: a
-    } deriving (Eq, Show)
-
-instance Functor Script where
-    fmap f script = script { scriptContents = f (scriptContents script) }
+    } deriving (Eq, Show, Functor)
 
 -- A script contains a number of panels representing the
 -- "scenes", which carry their own metadata as well as the
@@ -67,7 +65,4 @@ data Panel a = Panel
     , background :: FilePath
     , bgsize     :: Maybe Dim
     , action     :: a
-    } deriving Show
-
-instance Functor Panel where
- fmap f p = p { action = f (action p) }
+    } deriving (Show, Functor)
