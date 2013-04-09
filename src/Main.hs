@@ -2,8 +2,6 @@ module Main where
 
 import Control.Monad (when)
 
-import Data.Maybe (fromMaybe)
-
 import System.FilePath
 import System.Directory
 import System.Exit
@@ -47,12 +45,8 @@ publishComic opts = do
 
   okFile <- validateFile (comicstrip opts)
   when (not okFile) $ unreadableFile (comicstrip opts)
-  let info = Info { title = fromMaybe "Unknown comic" $ cli_title opts
-                  , description = fromMaybe "" $ cli_desc opts
-                  , author = "", date = "", credits = []
-                  , tags = cli_tags opts
-                  }
-  murl <- flickrUpload $ ULData (comicstrip opts) info
+
+  murl <- flickrUpload $ ULData (comicstrip opts) []
   putStrLn $ maybe "Image could not be published."
                    ("Image successfully uploaded to:\n" ++) murl
 

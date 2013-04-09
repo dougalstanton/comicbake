@@ -158,9 +158,10 @@ sendphoto ul = do
   setMeta upload_title upload_desc pid
   info <- getInfo pid Nothing
   return (getPhotoURL info)
-  where upload_tags = nub $ flickr_tags ++ tags (ulInfo ul)
+  where upload_tags = flickr_tags ++ user_tags ul
         upload_title = title (ulInfo ul)
         upload_desc = description (ulInfo ul)
+        user_tags = words . map (\c -> if c==',' then ' ' else c) . tags . ulInfo
 
 upload :: UploadData -> FM (Maybe URLString)
 upload uldata = do

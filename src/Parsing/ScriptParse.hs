@@ -1,10 +1,13 @@
 module Parsing.ScriptParse
-       (Action (..)
-       ,parseScript, parseScriptFromFile) where
+--     (Action (..)
+--     ,parseScript, parseScriptFromFile)
+       where
 
+import Control.Applicative
 import Control.Arrow (left)
 import Control.Monad (mplus)
-import Text.ParserCombinators.Parsec
+import Text.Parsec hiding (many, (<|>))
+import Text.Parsec.String
 import Data.Maybe
 import Data.Char (isSpace)
 
@@ -25,7 +28,7 @@ ifIndented yes no = do pos <- getPosition
 type ScriptParser a = GenParser Char ComicState a
 
 parseScriptFromFile :: FilePath -> IO (Either String (Script [Panel [Action]]))
-parseScriptFromFile fp = parseScript fp `fmap` readFile fp
+parseScriptFromFile fp = parseScript fp <$> readFile fp
 
 parseScript :: FilePath -> String -> Either String (Script [Panel [Action]])
 parseScript fp str = left show $ runParser scriptParser Nothing fp str
@@ -34,86 +37,63 @@ parseScript fp str = left show $ runParser scriptParser Nothing fp str
 -- Below here is the base level parser using Parsec.
 --
 
+-- Applicative style doesn't look so good with infix operators
+-- so define a couple of synonyms
+pair :: a -> b -> (a,b)
+pair a b = (,) a b
+cons :: a -> [a] -> [a]
+cons a b = a:b
+
+-- Some utility parsers.
+word, toEOL :: ScriptParser String
+word =  many1 letter
+toEOL = anyChar `manyTill` newline
 
 scriptParser :: ScriptParser (Script [Panel [Action]])
-scriptParser = do info   <- preambleParser
-                  scenes <- manyTill sceneParser eof
-                  fname  <- (sourceName . statePos) `fmap` getParserState
-                  return $ Script info fname scenes
+scriptParser = Script <$> header <*> filepath <*> (scene `manyTill` eof)
+  where filepath = sourceName . statePos <$> getParserState
 
-preambleParser :: ScriptParser Info
-preambleParser = do metadata <- catMaybes `fmap` many comment
-                    let info = Info { title  = fetch "title" metadata
-                                    , author = fetch "author" metadata
-                                    , date = "", description = ""
-                                    , credits = [], tags = [] }
-                    many (space <|> newline)
-                    return info
-    where fetch key = fromMaybe ("Unknown "++key) . lookup key
+header :: ScriptParser [(String,String)]
+header = preamble <* many (space <|> newline)
 
-sceneParser :: ScriptParser (Panel [Action])
-sceneParser = do (num,bgfile) <- sceneHeaderParser
-                 speeches     <- speechListParser
-                 return $ Panel num bgfile Nothing speeches
+scene :: ScriptParser (Panel [Action])
+scene = Panel <$> index <*> background <*> pure Nothing <*> speechListParser
+  where index = read <$> (string "Scene" *> spaces *> many1 digit <* char '.' <* spaces)
+        background = backgroundfile <* spaces
 
-sceneHeaderParser :: ScriptParser (Int,FilePath)
-sceneHeaderParser = do sceneKeyword >> spaces
-                       num <- many1 digit <?> "scene number"
-                       char '.' >> spaces
-                       url <- urlParser <?> "path to background image"
-                       many (space <|> newline)
-                       return (read num, url)
-    where urlParser = do oldUrl <- getState
-                         newUrl <- optionMaybe filename
-                         let url = newUrl `mplus` oldUrl
-                         maybe pzero (\u -> saveUrl url >> return u) url
-
-sceneKeyword :: ScriptParser String
-sceneKeyword = string "Scene" <?> "Scene header"
+backgroundfile :: ScriptParser FilePath
+backgroundfile = do oldurl <- getState
+                    newurl <- optionMaybe filename
+                    let result = newurl `mplus` oldurl
+                    case result of
+                        Just url -> saveUrl result >> return url
+                        Nothing  -> parserFail "path to background image"
 
 speechListParser :: ScriptParser [Action]
-speechListParser = do { eof; return [] }
-                   <|> do { lookAhead sceneKeyword ; return [] }
-                   <|> do speech <- speechParser
-                          others <- speechListParser
-                          return (speech:others)
+speechListParser = ([] <$ eof <|> [] <$ lookAhead (string "Scene"))
+                   <|> cons <$> speechParser <*> speechListParser
 
 speechParser :: ScriptParser Action
-speechParser = do speaker <- speakerParser <?> "speaker's name"
-                  thought <- try modeParser <?> "optional thought marker"
-                  speech  <- textParser <?> "speech"
-                  return $ Action speaker thought speech
+speechParser = Action <$> speaker <*> is_thought <*> speech
+  where speaker    = speakerParser <?> "speaker's name"
+        is_thought = try modeParser <?> "optional thought marker"
+        speech     = textParser <?> "speech"
 
 speakerParser :: ScriptParser String
-speakerParser = do name <- manyTill anyChar (char ':')
-                   spaces
-                   return (trim name)
+speakerParser = trim <$> manyTill anyChar (char ':') <* spaces
   where trim = dropWhile isSpace . reverse . dropWhile isSpace . reverse
 
 modeParser :: ScriptParser Bool
-modeParser = do mode <- optionMaybe (string "(Thinking)" >> spaces >> newline)
-                return (isJust mode)
+modeParser = isJust <$> optionMaybe (string "(Thinking)" >> spaces >> newline)
 
 textParser :: ScriptParser [String]
-textParser = spaces >> ifIndented lineParser (return [])
-  where lineParser = do l  <- anyChar `manyTill` newline
-                        ls <- textParser
-                        return (l:ls)
+textParser = spaces >> ifIndented (cons <$> toEOL <*> textParser) (return [])
 
 filename :: ScriptParser FilePath
 filename = between (char '<') (char '>') (many (noneOf "\n\r>"))
 
-comment :: ScriptParser (Maybe (String,String))
-comment = do delimiter
-             mkv <- optionMaybe (try keyvalue)
-             if isNothing mkv
-                then manyTill anyChar newline >> many newline
-                else many newline
-             return mkv
-  where delimiter = string "--" >> spaces
+preamble :: ScriptParser [(String,String)]
+preamble = between delimiter delimiter (many keyval)
+    where delimiter = string "--" *> spaces
+          keyval = pair <$> (word <* char ':' <* spaces) <*> toEOL
 
-keyvalue :: ScriptParser (String,String)
-keyvalue = do key <- many1 letter
-              char ':' >> spaces
-              val <- manyTill anyChar newline
-              return (key,val)
