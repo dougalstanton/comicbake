@@ -21,7 +21,7 @@ addspeech off img (Speech (Loc txtbox txt) (Loc speakerbox _)) = do
 writeImage :: FilePath -> FilePath -> FilePath -> Panel [Speech] -> IO (Panel FilePath)
 writeImage srcdir destdir filename panel = do
   img <- expandImage =<< loadPngFile (srcdir </> (background panel))
-  foldM (addspeech 10) img (action panel)
+  _ <- foldM (addspeech 10) img (action panel)
   let imgfile = destdir </> filename <.> show (number panel) <.> "png"
   savePngFile imgfile img
   newsize <- imageSize img
@@ -43,7 +43,7 @@ writeFooter = writeBookend footer "foot"
 writeBookend writer role txt width destdir filename = do
   img <- newImage (width,30)
   fillImage (rgb 0 0 0) img
+  _ <- writer txt img
   let imgfile = destdir </> filename <.> role <.> "png"
-  writer txt img
   savePngFile imgfile img
   return imgfile

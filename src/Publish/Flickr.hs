@@ -35,13 +35,10 @@ To log in again the user will have to re-authorise.
 -}
 
 import Control.Monad (when)
-import Data.Maybe (isNothing, fromMaybe)
-import Data.List (nub)
 
 import Flickr.API
 import Flickr.Photos (addTags, getInfo, getPhotoURL, setMeta)
 import Flickr.Photos.Upload (uploadPhoto, nullUploadAttr)
-import Util.Authenticate
 import Util.Keys
 
 import System.Directory

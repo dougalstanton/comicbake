@@ -31,6 +31,7 @@ import Comic.Geometry
 -- number of lines, and characters per line. Multiply the width by
 -- somewhere between 0.4 and 0.5 because that seems to be the right
 -- ratio from some experiments.
+estimate :: [String] -> (Int, Int)
 estimate str = (scale w,h)
   where w = 20 * (maximum $ map length str)
         h = 20 * length str
