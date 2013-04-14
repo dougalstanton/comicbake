@@ -94,6 +94,6 @@ filename = between (char '<') (char '>') (many (noneOf "\n\r>"))
 
 preamble :: ScriptParser [(String,String)]
 preamble = between delimiter delimiter (many keyval)
-    where delimiter = string "--" *> spaces
+    where delimiter = string "---" *> spaces
           keyval = pair <$> (word <* char ':' <* spaces) <*> toEOL
 
