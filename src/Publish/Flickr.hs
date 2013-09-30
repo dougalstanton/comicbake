@@ -1,3 +1,4 @@
+{-# LANGUAGE ScopedTypeVariables #-}
 module Publish.Flickr
   (
   -- Take an uploadable item and push it to
@@ -34,6 +35,7 @@ To log in again the user will have to re-authorise.
 
 -}
 
+import Control.Exception (IOException, catch)
 import Control.Monad (when)
 
 import Flickr.API
@@ -97,7 +99,7 @@ loadToken = do
   dir <- getAppUserDataDirectory "comicbake"
   let tokenfile = dir </> flickr_token_filename
   Just `fmap` readFile tokenfile
-   `catch` (return . const Nothing)
+   `catch` (\(_ :: IOException) -> return Nothing)
 
 saveToken :: AuthTokenValue -> IO ()
 saveToken tok = do
